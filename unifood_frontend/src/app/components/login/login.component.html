@@ -41,7 +41,9 @@
         <span *ngIf="!cargando">Iniciar Sesión</span>
         <span *ngIf="cargando">Cargando...</span>
       </button>
-
     </form>
+    <div class="login-link">
+        <p>¿Aun no tienes cuenta? <a (click)="irRegistroCliente()">Registrate aquí</a></p>
+    </div>
   </div>
 </div>

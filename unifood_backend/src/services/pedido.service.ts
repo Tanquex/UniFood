@@ -19,6 +19,10 @@ import {
 } from '../models/pedido.model';
 import { PedidoGateway } from './../gateways/pedido.gateway';
 
+//Cadena de responsabilidades
+import { PedidoChainFactory } from 'src/handlers/pedido-chain.factory';
+import { PedidoContext } from 'src/handlers/pedido-handler.base';
+
 @Injectable()
 export class PedidosService {
   private prisma = new PrismaClient();
@@ -31,8 +35,164 @@ export class PedidosService {
   ) {}
 
   // =============== MÉTODOS PARA CLIENTE ===============
-
+  //Crear con cadena de responsabilidades.
   async crear(dto: CrearPedidoDto, clienteId: number) {
+    const chain = PedidoChainFactory.create();
+
+    // Ejecutar la cadena de responsabilidades
+    const context: PedidoContext = {
+      dto,
+      clienteId,
+      prisma: this.prisma,
+      gateway: this.pedidoGateway,
+    };
+
+    //Ejecutar las validaciones
+    await chain.handle(context);
+
+    //Si llega aquí, todas las validaciones pasaron
+    const total = dto.productos.reduce((sum, p) => sum + p.precio_unitario * p.cantidad, 0);
+
+    const codigo = `PED-${Date.now()}-${clienteId}`;
+
+    const pagoMetodoId = dto.metodo_pago === 'tarjeta' ? 1 : 2; // 1=tarjeta, 2=efectivo
+
+    if (dto.metodo_pago === 'tarjeta') {
+      // ===== PAGO CON TARJETA =====
+      if (!dto.datos_tarjeta) {
+        throw new BadRequestException('Datos de tarjeta requeridos');
+      }
+
+      try {
+        // Procesar pago en el microservicio PRIMERO
+        const resultadoPago = await this.pagosClient.procesarPago({
+          pedidoId: 0, // Temporal, se actualizará
+          monto: total,
+          tarjeta: dto.datos_tarjeta,
+        });
+
+        if (!resultadoPago.success) {
+          throw new BadRequestException(resultadoPago.mensaje || 'Error al procesar el pago');
+        }
+
+        // Crear pedido SOLO si el pago fue exitoso
+        const pedido = await this.prisma.pedido.create({
+          data: {
+            codigo,
+            cliente_id: clienteId,
+            area_venta_id: dto.area_venta_id,
+            total_pedido: new Prisma.Decimal(total),
+            detalles_pedido: dto.detalles_pedido || null,
+            pedido_estado_id: 1, // pendiente
+            pedido_productos: {
+              create: dto.productos.map((p) => ({
+                producto_id: p.producto_id,
+                cantidad: p.cantidad,
+                precio_unitario: new Prisma.Decimal(p.precio_unitario),
+                detalles_producto: p.detalles_producto || null,
+              })),
+            },
+          },
+          include: {
+            cliente: true,
+            pedido_productos: { include: { producto: true } },
+            area_venta: true,
+            pagos: {
+              include: {
+                pago_metodo: true,
+                pago_estado: true,
+              },
+            },
+          },
+        });
+
+        // Actualizar el pedido_id en el pago del microservicio
+        await this.prisma.pago.update({
+          where: { id: resultadoPago.pagoId },
+          data: { pedido_id: pedido.id },
+        });
+
+        // Recargar pedido con pagos actualizados
+        const pedidoCompleto = await this.prisma.pedido.findUnique({
+          where: { id: pedido.id },
+          include: {
+            cliente: true,
+            pedido_productos: { include: { producto: true } },
+            area_venta: true,
+            pagos: {
+              include: {
+                pago_metodo: true,
+                pago_estado: true,
+              },
+            },
+          },
+        });
+
+        // Notificar por WebSocket
+        this.pedidoGateway.notificarNuevoPedidoCliente(pedidoCompleto);
+        this.pedidoGateway.notificarNuevoPedido(pedidoCompleto);
+
+        return {
+          pedido: pedidoCompleto,
+          advertencias: context.advertencias || [],
+        };
+      } catch (error) {
+        console.error('Error al crear pedido con tarjeta:', error);
+        throw new BadRequestException(error.message || 'Error al procesar el pedido con tarjeta');
+      }
+    } else {
+      // ===== PAGO EN EFECTIVO =====
+      const pedido = await this.prisma.pedido.create({
+        data: {
+          codigo,
+          cliente_id: clienteId,
+          area_venta_id: dto.area_venta_id,
+          total_pedido: new Prisma.Decimal(total),
+          detalles_pedido: dto.detalles_pedido || null,
+          pedido_estado_id: 1, // pendiente
+          pedido_productos: {
+            create: dto.productos.map((p) => ({
+              producto_id: p.producto_id,
+              cantidad: p.cantidad,
+              precio_unitario: new Prisma.Decimal(p.precio_unitario),
+              detalles_producto: p.detalles_producto || null,
+            })),
+          },
+          // Crear el registro de pago PENDIENTE para efectivo
+          pagos: {
+            create: {
+              cantidad: new Prisma.Decimal(total),
+              pago_metodo_id: pagoMetodoId,
+              pago_estado_id: 2, // pendiente
+              fecha: new Date(),
+            },
+          },
+        },
+        include: {
+          cliente: true,
+          pedido_productos: { include: { producto: true } },
+          area_venta: true,
+          pagos: {
+            include: {
+              pago_metodo: true,
+              pago_estado: true,
+            },
+          },
+        },
+      });
+
+      // Notificar por WebSocket
+      this.pedidoGateway.notificarNuevoPedidoCliente(pedido);
+      this.pedidoGateway.notificarNuevoPedido(pedido);
+
+      return {
+        pedido,
+        advertencias: context.advertencias || [],
+      };
+    }
+  }
+
+  async crear3(dto: CrearPedidoDto, clienteId: number) {
     // Validar que el área de venta exista y esté activa
     const areaVenta = await this.prisma.area_venta.findUnique({
       where: { id: dto.area_venta_id },

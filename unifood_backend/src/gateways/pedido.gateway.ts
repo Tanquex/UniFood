@@ -75,7 +75,6 @@ export class PedidoGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     // A todos los vendedores del área
     this.server.to(`vendedor-area-${pedido.area_venta_id}`).emit('actualizarPedido', pedido);
-
   }
 
   // Notificar pedido listo
@@ -85,7 +84,6 @@ export class PedidoGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     // A los vendedores del área
     this.server.to(`vendedor-area-${pedido.area_venta_id}`).emit('pedidoListo', pedido);
-
   }
 
   // MÉTODO ADICIONAL: Notificar cancelación
@@ -118,5 +116,17 @@ export class PedidoGateway implements OnGatewayConnection, OnGatewayDisconnect {
   notificarPedidoEntregado(pedido: any): void {
     this.server.to(`pedido-${pedido.id}`).emit('pedidoEntregado', pedido);
     this.server.to(`vendedor-area-${pedido.area_venta_id}`).emit('pedidoEntregado', pedido);
+  }
+
+  emitValidacionProgreso(
+    clienteId: number,
+    data: {
+      handler: string;
+      status: 'processing' | 'success' | 'error';
+      message?: string;
+      timestamp: string;
+    },
+  ) {
+    this.server.to(`cliente-${clienteId}`).emit('validacion-progreso', data);
   }
 }

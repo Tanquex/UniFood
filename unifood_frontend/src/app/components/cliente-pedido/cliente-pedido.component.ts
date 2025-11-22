@@ -12,6 +12,14 @@ import { RouterOutlet } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
 import { RecomendacionesHomeComponent } from '../recomendaciones-home/recomendaciones-home.component';
+import { WebsocketService } from '../../services/websocket.service';
+import { Subscription } from 'rxjs';
+
+interface Validacion {
+  nombre: string;
+  status: 'pending' | 'processing' | 'success' | 'warning' | 'error';
+  message?: string;
+}
 
 @Component({
   selector: 'app-cliente-pedido',
@@ -30,23 +38,47 @@ export class ClientePedidoComponent implements OnInit {
   detallesPedido: string = '';
   procesando: boolean = false;
 
+  private validacionSub?: Subscription;
+
+  mostrarProgresoValidacion: boolean = false;
+  validacionActual?: Validacion;
+
+  validaciones: Validacion[] = [
+    { nombre: 'Area de Venta.', status: 'pending' },
+    { nombre: 'Disponibilidad Area de Venta.', status: 'pending' },
+    { nombre: 'Disponibilidad de Productos.', status: 'pending' },
+    { nombre: 'Alergias.', status: 'pending' },
+    { nombre: 'Tiempo de espera.', status: 'pending' },
+    { nombre: 'Pedido Validado.', status: 'pending' },
+  ];
+
   constructor(
     private pedidoService: PedidoService,
-    private authService: AuthService
+    private authService: AuthService,
+    private socketService: WebsocketService
   ) {}
 
   ngOnInit(): void {
     this.cargarCarrito();
 
-    this.pedidoService.itemsCarrito$.subscribe((items)=>{
+    this.pedidoService.itemsCarrito$.subscribe((items) => {
       if (this.carritosPorArea.length > 0 && items.length === 0) {
-      this.areaSeleccionada = null;
-      this.metodoPagoSeleccionado = null;
-      this.detallesPedido = '';
-    }
+        this.areaSeleccionada = null;
+        this.metodoPagoSeleccionado = null;
+        this.detallesPedido = '';
+      }
 
-    this.cargarCarrito();
+      this.cargarCarrito();
     });
+
+    this.validacionSub = this.socketService.onValidacionProgreso().subscribe({
+      next: (data) => this.actualizarValidacion(data),
+    });
+  }
+
+  ngOnDestroy() {
+    this.validacionSub?.unsubscribe();
+    this.socketService.off('validacion-progreso');
   }
 
   cargarCarrito(): void {
@@ -172,7 +204,7 @@ export class ClientePedidoComponent implements OnInit {
     });
   }
 
- /* validarMicroservicioPagos(): void {
+  /* validarMicroservicioPagos(): void {
     Swal.fire({
       title: 'Validando...',
       text: 'Verificando disponibilidad del servicio de pagos',
@@ -207,6 +239,8 @@ export class ClientePedidoComponent implements OnInit {
     }
 
     this.procesando = true;
+    this.resetearValidaciones();
+    this.mostrarProgresoValidacion = true;
 
     const productos = this.areaSeleccionada.items.map((item) => ({
       producto_id: item.producto.id,
@@ -225,6 +259,9 @@ export class ClientePedidoComponent implements OnInit {
     this.pedidoService.crearPedido(dto).subscribe({
       next: (pedido) => {
         this.procesando = false;
+        setTimeout(() => {
+          this.mostrarProgresoValidacion = false;
+        }, 2000);
 
         // Limpiar SOLO los items del área confirmada
         this.pedidoService.limpiarItemsPorArea(
@@ -244,15 +281,46 @@ export class ClientePedidoComponent implements OnInit {
       },
       error: (err) => {
         this.procesando = false;
+        //this.mostrarProgresoValidacion = false;
         console.error('❌ Error al crear pedido:', err);
         Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: err.error?.message || 'No se pudo crear el pedido',
+          icon: 'warning',
+          title: 'Intentelo de nuevo más tarde',
+          html:
+            err.error?.message.replace(
+              /\n/g,
+              '<br>'
+            ) /*.join('\n Intentelo de nuevo más tarde.')*/ ||
+            'No se pudo crear el pedido',
           confirmButtonColor: '#5B9A97',
         });
       },
     });
+  }
+
+  cerrarValidacion() {
+    this.mostrarProgresoValidacion = false;
+  }
+
+  private actualizarValidacion(data: any) {
+    const index = this.validaciones.findIndex((v) => v.nombre === data.handler);
+    if (index !== -1) {
+      this.validaciones[index].status = data.status;
+      this.validaciones[index].message = data.message;
+
+      if (data.status === 'processing' || data.status === 'error' || data.status === 'warning') {
+        this.validacionActual = this.validaciones[index];
+      }
+    }
+  }
+
+  private resetearValidaciones() {
+    this.validaciones = this.validaciones.map((v) => ({
+      ...v,
+      status: 'pending',
+      message: undefined,
+    }));
+    this.validacionActual = undefined;
   }
 
   mostrarErrorMicroservicio(): void {

@@ -9,13 +9,13 @@ datasource db {
 }
 
 model usuario {
-  id                 Int          @id @default(autoincrement())
-  correo_electronico String       @unique @db.VarChar(255)
+  id                 Int         @id @default(autoincrement())
+  correo_electronico String      @unique @db.VarChar(255)
   contrasena         String
   rol                rol_enum
   clientes           cliente[]
+  supervisores       supervisor?
   vendedores         vendedor[]
-  supervisores       supervisor[]
 }
 
 model cliente {
@@ -23,7 +23,8 @@ model cliente {
   nombre_completo String   @db.VarChar(255)
   telefono        String   @db.VarChar(20)
   usuario_id      Int?
-  usuario         usuario? @relation(fields: [usuario_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  alergia         Json?    @default("[]")
+  usuario         usuario? @relation(fields: [usuario_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_cliente_usuario")
   pedidos         pedido[]
 }
 
@@ -39,7 +40,7 @@ model vendedor {
   email          String          @db.VarChar(255)
   estatus        String          @db.VarChar(255)
   productos      producto[]
-  usuario        usuario?        @relation(fields: [usuario_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  usuario        usuario?        @relation(fields: [usuario_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_vendedor_usuario")
   vendedor_areas vendedor_area[]
 }
 
@@ -52,8 +53,8 @@ model supervisor {
   num_empleado   Int       @unique
   email          String    @db.VarChar(255)
   departamento   String?   @db.VarChar(100)
-  estatus        String    @default("activo") @db.VarChar(50)
-  usuario        usuario?  @relation(fields: [usuario_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  estatus        String?   @default("activo") @db.VarChar(50)
+  usuario        usuario?  @relation(fields: [usuario_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_supervisor_usuario")
 }
 
 model area_venta {
@@ -76,8 +77,8 @@ model vendedor_area {
   fecha_asignacion DateTime?   @default(now()) @db.Timestamp(6)
   estatus          Boolean?    @default(true)
   fecha_baja       DateTime?   @db.Timestamp(6)
-  area_venta       area_venta? @relation(fields: [area_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  vendedor         vendedor?   @relation(fields: [vendedor_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  area_venta       area_venta? @relation(fields: [area_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_vendedor_area_area")
+  vendedor         vendedor?   @relation(fields: [vendedor_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_vendedor_area_vendedor")
 }
 
 model categoria {
@@ -104,9 +105,9 @@ model producto {
   calorias                Decimal?                @db.Decimal(10, 0)
   vendedorFK              Int
   pedido_productos        pedido_producto[]
-  area_venta              area_venta?             @relation(fields: [area_venta_id], references: [id], onUpdate: NoAction)
-  categoria               categoria?              @relation(fields: [categoria_id], references: [id], onUpdate: NoAction)
-  vendedor                vendedor                @relation(fields: [vendedorFK], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  area_venta              area_venta?             @relation(fields: [area_venta_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_producto_area_venta")
+  categoria               categoria?              @relation(fields: [categoria_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_producto_categoria")
+  vendedor                vendedor                @relation(fields: [vendedorFK], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "fk_producto_vendedor")
   producto_calificaciones producto_calificacion[]
 }
 
@@ -127,9 +128,9 @@ model pedido {
   total_pedido            Decimal?                @default(0.00) @db.Decimal(10, 2)
   pedido_estado_id        Int?
   pagos                   pago[]
-  pedido_estado           pedido_estado?          @relation(fields: [pedido_estado_id], references: [id], onUpdate: NoAction, map: "fk_pedido_estado")
-  area_venta              area_venta?             @relation(fields: [area_venta_id], references: [id], onUpdate: NoAction)
-  cliente                 cliente?                @relation(fields: [cliente_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  area_venta              area_venta?             @relation(fields: [area_venta_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_pedido_area_venta")
+  cliente                 cliente?                @relation(fields: [cliente_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_pedido_cliente")
+  pedido_estado           pedido_estado?          @relation(fields: [pedido_estado_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_pedido_estado")
   pedido_productos        pedido_producto[]
   producto_calificaciones producto_calificacion[]
 }
@@ -141,8 +142,8 @@ model pedido_producto {
   cantidad          Int
   precio_unitario   Decimal   @db.Decimal(10, 2)
   detalles_producto String?   @db.VarChar
-  pedido            pedido?   @relation(fields: [pedido_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  producto          producto? @relation(fields: [producto_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  pedido            pedido?   @relation(fields: [pedido_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_pedido_producto_pedido")
+  producto          producto? @relation(fields: [producto_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_pedido_producto_producto")
 }
 
 model producto_calificacion {
@@ -151,8 +152,8 @@ model producto_calificacion {
   comentario  String?
   producto_id Int?
   pedido_id   Int?
-  pedido      pedido?   @relation(fields: [pedido_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  producto    producto? @relation(fields: [producto_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  pedido      pedido?   @relation(fields: [pedido_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_producto_calificacion_pedido")
+  producto    producto? @relation(fields: [producto_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_producto_calificacion_producto")
 }
 
 model pago_metodo {
@@ -174,9 +175,9 @@ model pago {
   pago_estado_id Int?
   fecha          DateTime     @db.Date
   pedido_id      Int?
+  pago_estado    pago_estado? @relation(fields: [pago_estado_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_pago_estado")
+  pago_metodo    pago_metodo? @relation(fields: [pago_metodo_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_pago_metodo")
   pedido         pedido?      @relation(fields: [pedido_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_pedido_pago")
-  pago_estado    pago_estado? @relation(fields: [pago_estado_id], references: [id], onUpdate: NoAction)
-  pago_metodo    pago_metodo? @relation(fields: [pago_metodo_id], references: [id], onUpdate: NoAction)
   pagos_log      pago_log[]
 }
 
@@ -186,7 +187,57 @@ model pago_log {
   detalles Json?
   fecha    DateTime    @db.Date
   pago_id  Int?
-  pago     pago?       @relation(fields: [pago_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  pago     pago?       @relation(fields: [pago_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_pago_log_pago")
+}
+
+model registro_chat {
+  id               Int       @id @default(autoincrement())
+  usuario_id       Int
+  mensaje_usuario  String
+  respuesta_gemini Json
+  timestamp        DateTime? @default(now()) @db.Timestamp(6)
+  session_id       String?   @db.VarChar(255)
+  metadata         Json?
+}
+
+model recomendacion {
+  id                         Int                         @id @default(autoincrement())
+  producto_id                Int
+  tipo_recomendacion         String                      @db.VarChar(50)
+  prioridad                  Int?                        @default(0)
+  activo                     Boolean?                    @default(true)
+  fecha_inicio               DateTime?                   @db.Timestamp(6)
+  fecha_fin                  DateTime?                   @db.Timestamp(6)
+  supervisor_id              Int?
+  metadata                   Json?
+  created_at                 DateTime?                   @default(now()) @db.Timestamp(6)
+  updated_at                 DateTime?                   @default(now()) @updatedAt @db.Timestamp(6)
+  recomendacion_interaccions recomendacion_interaccion[]
+
+  @@index([activo, prioridad], map: "idx_recomendacion_activo_prioridad")
+  @@index([tipo_recomendacion, activo], map: "idx_recomendacion_tipo_activo")
+}
+
+model metrica_producto {
+  id                    Int       @id @default(autoincrement())
+  producto_id           Int       @unique
+  total_ventas          Int?      @default(0)
+  calificacion_promedio Decimal?  @default(0.00) @db.Decimal(3, 2)
+  total_calificaciones  Int?      @default(0)
+  ultima_actualizacion  DateTime? @default(now()) @db.Timestamp(6)
+}
+
+model recomendacion_interaccion {
+  id               Int           @id @default(autoincrement())
+  recomendacion_id Int
+  cliente_id       Int?
+  tipo_interaccion String?       @db.VarChar(50)
+  fecha            DateTime?     @default(now()) @db.Timestamp(6)
+  metadata         Json?
+  recomendacion    recomendacion @relation(fields: [recomendacion_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_recomendacion_interaccion_recomendacion")
+
+  @@index([fecha], map: "idx_recomendacion_interaccion_fecha")
+  @@index([recomendacion_id], map: "idx_recomendacion_interaccion_recomendacion_id")
 }
 
 enum rol_enum {
@@ -199,58 +250,4 @@ enum accion_enum {
   CREADO
   ACTUALIZADO
   ELIMINADO
-}
-
-model registro_chat {
-  id               Int      @id @default(autoincrement())
-  usuario_id       Int
-  mensaje_usuario  String
-  respuesta_gemini Json
-  timestamp        DateTime @default(now())
-  session_id       String?
-  metadata         Json?
-}
-
-// ============================================
-// MÓDULO DE RECOMENDACIONES (NUEVAS TABLAS)
-// ============================================
-
-model recomendacion {
-  id                         Int                          @id @default(autoincrement())
-  producto_id                Int
-  tipo_recomendacion         String                       @db.VarChar(50)
-  prioridad                  Int                          @default(0)
-  activo                     Boolean                      @default(true)
-  fecha_inicio               DateTime?                    @db.Timestamp(6)
-  fecha_fin                  DateTime?                    @db.Timestamp(6)
-  supervisor_id              Int?
-  metadata                   Json?                        @db.JsonB
-  created_at                 DateTime                     @default(now()) @db.Timestamp(6)
-  updated_at                 DateTime                     @updatedAt @db.Timestamp(6)
-  recomendacion_interaccions recomendacion_interaccion[]
-
-  @@index([activo, prioridad])
-  @@index([tipo_recomendacion, activo])
-}
-
-model metrica_producto {
-  id                    Int      @id @default(autoincrement())
-  producto_id           Int      @unique
-  total_ventas          Int      @default(0)
-  calificacion_promedio Decimal  @default(0.00) @db.Decimal(3, 2)
-  total_calificaciones  Int      @default(0)
-  ultima_actualizacion  DateTime @default(now()) @db.Timestamp(6)
-}
-
-model recomendacion_interaccion {
-  id                Int           @id @default(autoincrement())
-  recomendacion_id  Int
-  cliente_id        Int?
-  tipo_interaccion  String?       @db.VarChar(50)
-  fecha             DateTime      @default(now()) @db.Timestamp(6)
-  metadata          Json?         @db.JsonB
-  recomendacion     recomendacion @relation(fields: [recomendacion_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-
-  @@index([recomendacion_id])
-  @@index([fecha])
 }

@@ -89,7 +89,7 @@ export class ChatHistoryDto {
   respuesta_gemini!: Record<string, unknown>;
 
   @IsDateString()
-  timestamp!: string;
+  timestamp?: string;
 
   @IsOptional()
   @IsString()

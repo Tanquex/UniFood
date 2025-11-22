@@ -1,0 +1,247 @@
+<div class="registro-container">
+  <div class="registro-card">
+    <div class="registro-header">
+      <h1>Registro</h1>
+      <p>Crea tu cuenta de cliente</p>
+    </div>
+
+    <form [formGroup]="registroForm" (ngSubmit)="onSubmit()">
+      <!-- Nombre Completo -->
+      <div class="form-group">
+        <label for="nombre_completo">Nombre Completo</label>
+        <input
+          type="text"
+          id="nombre_completo"
+          formControlName="nombre_completo"
+          placeholder="Ingresa tu nombre completo"
+          [disabled]="isLoading"
+        />
+        <span
+          class="error-message"
+          *ngIf="
+            registroForm.get('nombre_completo')?.touched &&
+            registroForm.get('nombre_completo')?.invalid
+          "
+        >
+          {{ getErrorMessage("nombre_completo") }}
+        </span>
+      </div>
+
+      <!-- Correo Electrónico -->
+      <div class="form-group">
+        <label for="correo_electronico">Correo Electrónico</label>
+        <input
+          type="email"
+          id="correo_electronico"
+          formControlName="correo_electronico"
+          placeholder="tu@correo.com"
+          [disabled]="isLoading"
+        />
+        <span
+          class="error-message"
+          *ngIf="
+            registroForm.get('correo_electronico')?.touched &&
+            registroForm.get('correo_electronico')?.invalid
+          "
+        >
+          {{ getErrorMessage("correo_electronico") }}
+        </span>
+      </div>
+
+      <!-- Teléfono -->
+      <div class="form-group">
+        <label for="telefono">Teléfono</label>
+        <input
+          type="tel"
+          id="telefono"
+          formControlName="telefono"
+          placeholder="123-456-7890"
+          [disabled]="isLoading"
+        />
+        <span
+          class="error-message"
+          *ngIf="
+            registroForm.get('telefono')?.touched &&
+            registroForm.get('telefono')?.invalid
+          "
+        >
+          {{ getErrorMessage("telefono") }}
+        </span>
+      </div>
+
+      <!-- Alergias -->
+      <div class="form-group">
+        <label for="alergia_input">Alergias y consideraciones (opcional)</label>
+        <div style="position: relative">
+          <div style="display: flex; gap: 8px">
+            <input
+              type="text"
+              id="alergia_input"
+              formControlName="alergia_input"
+              placeholder="Escribe una alergia..."
+              [disabled]="isLoading"
+              (input)="filtrarAlergias()"
+              (keyup.enter)="agregarAlergia()"
+            />
+            <button
+              type="button"
+              class="btn-submit"
+              (click)="agregarAlergia()"
+              [disabled]="
+                isLoading || !registroForm.get('alergia_input')?.value?.trim()
+              "
+              style="width: auto; padding: 0 20px; min-width: 50px"
+            >
+              +
+            </button>
+          </div>
+
+          <!-- Sugerencias de alergias -->
+          <div
+            *ngIf="mostrarSugerencias"
+            style="
+              position: absolute;
+              top: 100%;
+              left: 0;
+              right: 50px;
+              background: white;
+              border: 1px solid #ddd;
+              border-radius: 4px;
+              margin-top: 4px;
+              max-height: 200px;
+              overflow-y: auto;
+              z-index: 1000;
+              box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            "
+          >
+            <div
+              *ngFor="let alergia of alergiasFiltradas"
+              (click)="seleccionarAlergia(alergia)"
+              style="
+                padding: 10px;
+                cursor: pointer;
+                border-bottom: 1px solid #f0f0f0;
+              "
+              onmouseover="this.style.backgroundColor='#f5f5f5'"
+              onmouseout="this.style.backgroundColor='white'"
+            >
+              {{ alergia }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Lista de alergias agregadas -->
+        <div
+          *ngIf="alergias.length > 0"
+          style="margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px"
+        >
+          <span
+            *ngFor="let alergia of alergias; let i = index"
+            style="
+              display: inline-flex;
+              align-items: center;
+              gap: 6px;
+              background: #e3f2fd;
+              color: #1976d2;
+              padding: 6px 12px;
+              border-radius: 16px;
+              font-size: 14px;
+            "
+          >
+            {{ alergia }}
+            <button
+              type="button"
+              (click)="eliminarAlergia(i)"
+              [disabled]="isLoading"
+              style="
+                background: none;
+                border: none;
+                color: #1976d2;
+                cursor: pointer;
+                font-size: 18px;
+                line-height: 1;
+                padding: 0;
+                width: 20px;
+                height: 20px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+              "
+              title="Eliminar alergia"
+            >
+              ×
+            </button>
+          </span>
+        </div>
+      </div>
+
+      <!-- Contraseña -->
+      <div class="form-group">
+        <label for="contrasena">Contraseña</label>
+        <input
+          type="password"
+          id="contrasena"
+          formControlName="contrasena"
+          placeholder="Mínimo 6 caracteres"
+          [disabled]="isLoading"
+        />
+        <span
+          class="error-message"
+          *ngIf="
+            registroForm.get('contrasena')?.touched &&
+            registroForm.get('contrasena')?.invalid
+          "
+        >
+          {{ getErrorMessage("contrasena") }}
+        </span>
+      </div>
+
+      <!-- Confirmar Contraseña -->
+      <div class="form-group">
+        <label for="confirmar_contrasena">Confirmar Contraseña</label>
+        <input
+          type="password"
+          id="confirmar_contrasena"
+          formControlName="confirmar_contrasena"
+          placeholder="Repite tu contraseña"
+          [disabled]="isLoading"
+        />
+        <span
+          class="error-message"
+          *ngIf="
+            registroForm.get('confirmar_contrasena')?.touched &&
+            registroForm.hasError('passwordMismatch')
+          "
+        >
+          {{ getErrorMessage("confirmar_contrasena") }}
+        </span>
+      </div>
+
+      <!-- Mensajes de error y éxito -->
+      <div class="alert alert-error" *ngIf="errorMessage">
+        {{ errorMessage }}
+      </div>
+
+      <div class="alert alert-success" *ngIf="successMessage">
+        {{ successMessage }}
+      </div>
+
+      <!-- Botón de registro -->
+      <button
+        type="submit"
+        class="btn-submit"
+        [disabled]="isLoading || registroForm.invalid"
+      >
+        {{ isLoading ? "Registrando..." : "Registrarse" }}
+      </button>
+
+      <!-- Link a login -->
+      <div class="login-link">
+        <p>
+          ¿Ya tienes cuenta?
+          <a (click)="navigateToLogin()">Inicia sesión aquí</a>
+        </p>
+      </div>
+    </form>
+  </div>
+</div>

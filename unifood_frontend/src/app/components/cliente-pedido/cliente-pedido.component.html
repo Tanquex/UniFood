@@ -9,224 +9,285 @@
   </div>
 
   <!-- Vista: Selección de área (cuando hay múltiples áreas) -->
-  <div
-    class="seleccion-area"
-    *ngIf="!areaSeleccionada && carritosPorArea.length > 1"
-  >
-    <div class="titulo-seccion">
-      <i class="fas fa-shopping-cart"></i>
-      <h2>Selecciona el área de tu pedido</h2>
+    <div
+      class="seleccion-area"
+      *ngIf="!areaSeleccionada && carritosPorArea.length > 1"
+    >
+      <div class="titulo-seccion">
+        <i class="fas fa-shopping-cart"></i>
+        <h2>Selecciona el área de tu pedido</h2>
+      </div>
+
+      <div class="areas-grid">
+        <div
+          *ngFor="let area of carritosPorArea"
+          class="area-card"
+          (click)="seleccionarArea(area)"
+        >
+          <div class="area-header">
+            <h3>{{ area.area_nombre }}</h3>
+            <span class="badge-items">{{ area.items.length }} producto(s)</span>
+          </div>
+
+          <div class="area-productos">
+            <div *ngFor="let item of area.items" class="producto-mini">
+              <span class="cantidad">{{ item.cantidad }}x</span>
+              <span class="nombre">{{ item.producto.nombre }}</span>
+            </div>
+          </div>
+
+          <div class="area-total">
+            <span>Total:</span>
+            <strong>${{ area.total }}</strong>
+          </div>
+
+          <button class="btn-seleccionar">
+            <i class="fas fa-arrow-right"></i>
+            Continuar con esta área
+          </button>
+        </div>
+      </div>
     </div>
 
-    <div class="areas-grid">
-      <div
-        *ngFor="let area of carritosPorArea"
-        class="area-card"
-        (click)="seleccionarArea(area)"
-      >
-        <div class="area-header">
-          <h3>{{ area.area_nombre }}</h3>
-          <span class="badge-items">{{ area.items.length }} producto(s)</span>
+    <!-- Vista: Confirmación de pedido -->
+    <div class="confirmacion-pedido" *ngIf="areaSeleccionada">
+      <!-- Header con botón volver -->
+      <div class="header-confirmacion">
+        <button
+          *ngIf="carritosPorArea.length > 1"
+          class="btn-volver"
+          (click)="volver()"
+        >
+          <i class="fas fa-arrow-left"></i>
+          Volver
+        </button>
+        <div class="titulo-seccion">
+          <i class="fas fa-check-circle"></i>
+          <h2>Confirmar Pedido</h2>
         </div>
+      </div>
 
-        <div class="area-productos">
-          <div *ngFor="let item of area.items" class="producto-mini">
-            <span class="cantidad">{{ item.cantidad }}x</span>
-            <span class="nombre">{{ item.producto.nombre }}</span>
+      <!-- Productos del área seleccionada -->
+      <div class="seccion-productos" *ngIf="areaSeleccionada.items.length > 0">
+        <h3>
+          <i class="fas fa-list"></i>
+          Productos ({{ areaSeleccionada.items.length }})
+        </h3>
+
+        <div class="productos-lista">
+          <div
+            *ngFor="let item of areaSeleccionada.items"
+            class="producto-carrito"
+          >
+            <div class="producto-imagen">
+              <img
+                [src]="item.producto.imagen_url"
+                [alt]="item.producto.nombre"
+              />
+            </div>
+
+            <div class="producto-info">
+              <h4>{{ item.producto.nombre }}</h4>
+              <p class="descripcion">{{ item.producto.descripcion }}</p>
+              <div class="producto-meta">
+                <span class="meta-item">
+                  <i class="fas fa-clock"></i>
+                  {{ item.producto.tiempo_preparacion }} min
+                </span>
+                <span class="meta-item">
+                  <i class="fas fa-fire"></i>
+                  {{ item.producto.calorias }} cal
+                </span>
+              </div>
+              <div class="detalles-especiales" *ngIf="item.detalles">
+                <i class="fas fa-comment"></i>
+                <span>{{ item.detalles }}</span>
+              </div>
+            </div>
+
+            <div class="producto-acciones">
+              <div class="cantidad-control">
+                <button
+                  *ngIf="item.cantidad > 1"
+                  class="btn-cantidad"
+                  (click)="actualizarCantidad(item, item.cantidad - 1)"
+                >
+                  <i class="fas fa-minus"></i>
+                </button>
+                <span class="cantidad-valor">{{ item.cantidad }}</span>
+                <button
+                  class="btn-cantidad"
+                  (click)="actualizarCantidad(item, item.cantidad + 1)"
+                >
+                  <i class="fas fa-plus"></i>
+                </button>
+              </div>
+
+              <div class="precio-item">
+                <span class="precio-unitario"
+                  >${{ item.producto.precio }} c/u</span
+                >
+                <strong class="subtotal">${{ item.subtotal }}</strong>
+              </div>
+
+              <button class="btn-eliminar" (click)="eliminarItem(item)">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Detalles adicionales -->
+      <div class="seccion-detalles">
+        <h3>
+          <i class="fas fa-comment-dots"></i>
+          Detalles adicionales (opcional)
+        </h3>
+        <textarea
+          [(ngModel)]="detallesPedido"
+          placeholder="Ej: Para llevar, para las 11:30, etc. (Max 80 caracteres)"
+          rows="3"
+        ></textarea>
+      </div>
+
+      <!-- Método de pago -->
+      <div class="seccion-pago">
+        <h3>
+          <i class="fas fa-credit-card"></i>
+          Método de pago
+        </h3>
+
+        <div class="metodos-pago">
+          <div
+            class="metodo-card"
+            [class.selected]="metodoPagoSeleccionado === 'efectivo'"
+            (click)="metodoPagoSeleccionado = 'efectivo'"
+          >
+            <div class="metodo-icono">
+              <i class="fas fa-money-bill-wave"></i>
+            </div>
+            <div class="metodo-info">
+              <strong>Efectivo</strong>
+              <span>Pagar al recoger</span>
+            </div>
+            <div class="metodo-check">
+              <i class="fas fa-check-circle"></i>
+            </div>
+          </div>
+
+          <div
+            class="metodo-card"
+            [class.selected]="metodoPagoSeleccionado === 'tarjeta'"
+            (click)="metodoPagoSeleccionado = 'tarjeta'"
+          >
+            <div class="metodo-icono">
+              <i class="fas fa-credit-card"></i>
+            </div>
+            <div class="metodo-info">
+              <strong>Tarjeta</strong>
+              <span>Pagar ahora</span>
+            </div>
+            <div class="metodo-check">
+              <i class="fas fa-check-circle"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Progreso de validación - Tipo cadena horizontal -->
+      <div class="validacion-cadena" *ngIf="mostrarProgresoValidacion">
+        <div class="cadena-container">
+          <div
+            *ngFor="let validacion of validaciones; let i = index"
+            class="cadena-item"
+          >
+            <!-- Círculo/Nodo de validación -->
+            <div
+              class="nodo"
+              [ngClass]="{
+                'nodo-pending': validacion.status === 'pending',
+                'nodo-processing': validacion.status === 'processing',
+                'nodo-success': validacion.status === 'success',
+                'nodo-warning': validacion.status === 'warning',
+                'nodo-error': validacion.status === 'error'
+              }"
+              [title]="validacion.nombre"
+            >
+              <!-- Icono según estado -->
+              <span *ngIf="validacion.status === 'pending'">⏳</span>
+              <span *ngIf="validacion.status === 'processing'" class="spinner"
+                >⚙️</span
+              >
+              <span *ngIf="validacion.status === 'success'">✓</span>
+              <span *ngIf="validacion.status === 'warning'">⚠️</span>
+              <span *ngIf="validacion.status === 'error'">✗</span>
+            </div>
+
+            <!-- Línea conectora (no mostrar después del último) -->
+            <div
+              *ngIf="i < validaciones.length - 1"
+              class="linea"
+              [ngClass]="{
+                'linea-active': validacion.status === 'success',
+                'linea-warning': validacion.status === 'warning',
+                'linea-error': validacion.status === 'error'
+              }"
+            ></div>
           </div>
         </div>
 
-        <div class="area-total">
-          <span>Total:</span>
-          <strong>${{ area.total }}</strong>
+        <!-- Etiqueta del paso actual -->
+        <div class="validacion-actual" *ngIf="validacionActual">
+          <p>{{ validacionActual.nombre }}</p>
+          <!--small *ngIf="validacionActual.message">{{
+            validacionActual.message
+          }}</!--small-->
+        </div>
+        <button class="btn-ocultar" (click)="cerrarValidacion()">
+          <i class="fas fa-eye-slash"></i>
+          Ocultar progreso
+        </button>
+        <!--button class="btn-reintentar" (click)="confirmarPedido()">
+          <i class="fas fa-redo"></i>
+          Reintentar validación
+        </!--button-->
+      </div>
+
+      <!-- Resumen y confirmación -->
+      <div class="seccion-resumen">
+        <div class="resumen-card">
+          <div class="resumen-row">
+            <span
+              >Subtotal ({{ areaSeleccionada.items.length }} productos):</span
+            >
+            <strong>${{ areaSeleccionada.total }}</strong>
+          </div>
+          <div class="resumen-row total">
+            <span>Total a pagar:</span>
+            <strong>${{ areaSeleccionada.total }}</strong>
+          </div>
         </div>
 
-        <button class="btn-seleccionar">
-          <i class="fas fa-arrow-right"></i>
-          Continuar con esta área
+        <button
+          class="btn-confirmar"
+          (click)="confirmarPedido()"
+          [disabled]="procesando || !metodoPagoSeleccionado"
+        >
+          <i class="fas fa-spinner fa-spin" *ngIf="procesando"></i>
+          <i class="fas fa-check" *ngIf="!procesando"></i>
+          {{ procesando ? "Procesando..." : "Confirmar Pedido" }}
         </button>
       </div>
     </div>
-  </div>
 
-  <!-- Vista: Confirmación de pedido -->
-  <div class="confirmacion-pedido" *ngIf="areaSeleccionada">
-    <!-- Header con botón volver -->
-    <div class="header-confirmacion">
-      <button
-        *ngIf="carritosPorArea.length > 1"
-        class="btn-volver"
-        (click)="volver()"
-      >
-        <i class="fas fa-arrow-left"></i>
-        Volver
-      </button>
-      <div class="titulo-seccion">
-        <i class="fas fa-check-circle"></i>
-        <h2>Confirmar Pedido</h2>
+    <!-- Estado vacío -->
+    <div class="carrito-vacio" *ngIf="carritosPorArea.length === 0">
+      <div class="vacio-icono">
+        <i class="fas fa-shopping-cart"></i>
       </div>
+      <h3>Tu carrito está vacío</h3>
+      <p>Agrega productos para continuar</p>
     </div>
-
-    <!-- Productos del área seleccionada -->
-    <div class="seccion-productos" *ngIf="areaSeleccionada.items.length > 0">
-      <h3>
-        <i class="fas fa-list"></i>
-        Productos ({{ areaSeleccionada.items.length }})
-      </h3>
-
-      <div class="productos-lista">
-        <div
-          *ngFor="let item of areaSeleccionada.items"
-          class="producto-carrito"
-        >
-          <div class="producto-imagen">
-            <img
-              [src]="item.producto.imagen_url"
-              [alt]="item.producto.nombre"
-            />
-          </div>
-
-          <div class="producto-info">
-            <h4>{{ item.producto.nombre }}</h4>
-            <p class="descripcion">{{ item.producto.descripcion }}</p>
-            <div class="producto-meta">
-              <span class="meta-item">
-                <i class="fas fa-clock"></i>
-                {{ item.producto.tiempo_preparacion }} min
-              </span>
-              <span class="meta-item">
-                <i class="fas fa-fire"></i>
-                {{ item.producto.calorias }} cal
-              </span>
-            </div>
-            <div class="detalles-especiales" *ngIf="item.detalles">
-              <i class="fas fa-comment"></i>
-              <span>{{ item.detalles }}</span>
-            </div>
-          </div>
-
-          <div class="producto-acciones">
-            <div class="cantidad-control">
-              <button
-                *ngIf = "item.cantidad > 1"
-                class="btn-cantidad"
-                (click)="actualizarCantidad(item, item.cantidad - 1)"
-              >
-                <i class="fas fa-minus"></i>
-              </button>
-              <span class="cantidad-valor">{{ item.cantidad }}</span>
-              <button
-                class="btn-cantidad"
-                (click)="actualizarCantidad(item, item.cantidad + 1)"
-              >
-                <i class="fas fa-plus"></i>
-              </button>
-            </div>
-
-            <div class="precio-item">
-              <span class="precio-unitario"
-                >${{ item.producto.precio }} c/u</span
-              >
-              <strong class="subtotal">${{ item.subtotal }}</strong>
-            </div>
-
-            <button class="btn-eliminar" (click)="eliminarItem(item)">
-              <i class="fas fa-trash"></i>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Detalles adicionales -->
-    <div class="seccion-detalles">
-      <h3>
-        <i class="fas fa-comment-dots"></i>
-        Detalles adicionales (opcional)
-      </h3>
-      <textarea
-        [(ngModel)]="detallesPedido"
-        placeholder="Ej: Para llevar, para las 11:30, etc. (Max 80 caracteres)"
-        rows="3"
-      ></textarea>
-    </div>
-
-    <!-- Método de pago -->
-    <div class="seccion-pago">
-      <h3>
-        <i class="fas fa-credit-card"></i>
-        Método de pago
-      </h3>
-
-      <div class="metodos-pago">
-        <div
-          class="metodo-card"
-          [class.selected]="metodoPagoSeleccionado === 'efectivo'"
-          (click)="metodoPagoSeleccionado = 'efectivo'"
-        >
-          <div class="metodo-icono">
-            <i class="fas fa-money-bill-wave"></i>
-          </div>
-          <div class="metodo-info">
-            <strong>Efectivo</strong>
-            <span>Pagar al recoger</span>
-          </div>
-          <div class="metodo-check">
-            <i class="fas fa-check-circle"></i>
-          </div>
-        </div>
-
-        <div
-          class="metodo-card"
-          [class.selected]="metodoPagoSeleccionado === 'tarjeta'"
-          (click)="metodoPagoSeleccionado = 'tarjeta'"
-        >
-          <div class="metodo-icono">
-            <i class="fas fa-credit-card"></i>
-          </div>
-          <div class="metodo-info">
-            <strong>Tarjeta</strong>
-            <span>Pagar ahora</span>
-          </div>
-          <div class="metodo-check">
-            <i class="fas fa-check-circle"></i>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Resumen y confirmación -->
-    <div class="seccion-resumen">
-      <div class="resumen-card">
-        <div class="resumen-row">
-          <span>Subtotal ({{ areaSeleccionada.items.length }} productos):</span>
-          <strong>${{ areaSeleccionada.total }}</strong>
-        </div>
-        <div class="resumen-row total">
-          <span>Total a pagar:</span>
-          <strong>${{ areaSeleccionada.total }}</strong>
-        </div>
-      </div>
-
-      <button
-        class="btn-confirmar"
-        (click)="confirmarPedido()"
-        [disabled]="procesando || !metodoPagoSeleccionado"
-      >
-        <i class="fas fa-spinner fa-spin" *ngIf="procesando"></i>
-        <i class="fas fa-check" *ngIf="!procesando"></i>
-        {{ procesando ? "Procesando..." : "Confirmar Pedido" }}
-      </button>
-    </div>
-  </div>
-
-  <!-- Estado vacío -->
-  <div class="carrito-vacio" *ngIf="carritosPorArea.length === 0">
-    <div class="vacio-icono">
-      <i class="fas fa-shopping-cart"></i>
-    </div>
-    <h3>Tu carrito está vacío</h3>
-    <p>Agrega productos para continuar</p>
   </div>
 </div>
-

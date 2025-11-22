@@ -13,6 +13,7 @@ import { AreaVentaModule } from './modules/area-venta.module';
 import { CategoriaModule } from './modules/categoria.module';
 import { ProductoModule } from './modules/producto.module';
 import { RecomendacionModule } from './modules/recomendacion.module';
+import { ClienteModule } from './modules/cliente.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { RecomendacionModule } from './modules/recomendacion.module';
     CategoriaModule,
     ProductoModule,
     RecomendacionModule,
+    ClienteModule
   ],
   controllers: [AppController],
   providers: [AppService],

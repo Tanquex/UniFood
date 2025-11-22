@@ -25,7 +25,7 @@ export class AppComponent implements OnInit {
 
       // Si no está autenticado y no está en login → redirige
       if (!autenticado && this.router.url !== '/login') {
-        this.router.navigate(['/login']);
+        this.router.navigate(['/registro-cliente']);
         return;
       }
 
