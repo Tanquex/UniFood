@@ -1,4 +1,5 @@
-import { PedidoHandler, PedidoContext } from './pedido-handler.base';
+import { PedidoHandler} from '../abstract/pedido-handler.base';
+import { PedidoContext } from '../interfaces/pedido-context.interface';
 
 export class VerificarPedidosEsperaHandler extends PedidoHandler {
   private readonly UMBRAL_ADVERTENCIA = 5; // Advertir si hay más de 5 pedidos en espera

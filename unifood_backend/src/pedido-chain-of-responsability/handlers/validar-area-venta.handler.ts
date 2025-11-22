@@ -1,5 +1,6 @@
-import { PedidoHandler, PedidoContext } from './pedido-handler.base';
-import { AreaNoEncontradaException } from './pedido.exceptions';
+import { PedidoHandler} from '../abstract/pedido-handler.base';
+import { PedidoContext } from '../interfaces/pedido-context.interface';
+import { AreaNoEncontradaException } from '../exceptions/pedido.exceptions';
 
 export class ValidarAreaVentaHandler extends PedidoHandler {
   constructor() {

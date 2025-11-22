@@ -29,19 +29,14 @@ export class RecomendacionService {
   /**
    * Crear una nueva recomendación
    */
-  async crearRecomendacion(
-    dto: CrearRecomendacionDto,
-    supervisorId?: number,
-  ): Promise<any> {
+  async crearRecomendacion(dto: CrearRecomendacionDto, supervisorId?: number): Promise<any> {
     // Verificar que el producto existe
     const producto = await this.prisma.producto.findUnique({
       where: { id: dto.producto_id },
     });
 
     if (!producto) {
-      throw new NotFoundException(
-        `Producto con ID ${dto.producto_id} no encontrado`,
-      );
+      throw new NotFoundException(`Producto con ID ${dto.producto_id} no encontrado`);
     }
 
     // Validar fechas
@@ -50,9 +45,7 @@ export class RecomendacionService {
       const fin = new Date(dto.fecha_fin);
 
       if (fin <= inicio) {
-        throw new BadRequestException(
-          'La fecha de fin debe ser posterior a la fecha de inicio',
-        );
+        throw new BadRequestException('La fecha de fin debe ser posterior a la fecha de inicio');
       }
     }
 
@@ -76,9 +69,7 @@ export class RecomendacionService {
   /**
    * Obtener recomendaciones con filtros
    */
-  async obtenerRecomendaciones(
-    filtros?: FiltrosRecomendacionDto,
-  ): Promise<any[]> {
+  async obtenerRecomendaciones(filtros?: FiltrosRecomendacionDto): Promise<any[]> {
     const where: any = {};
 
     if (filtros?.tipo) {
@@ -167,10 +158,7 @@ export class RecomendacionService {
   /**
    * Actualizar recomendación
    */
-  async actualizarRecomendacion(
-    id: number,
-    dto: ActualizarRecomendacionDto,
-  ): Promise<any> {
+  async actualizarRecomendacion(id: number, dto: ActualizarRecomendacionDto): Promise<any> {
     // Verificar que existe
     const existe = await this.prisma.recomendacion.findUnique({
       where: { id },
@@ -186,9 +174,7 @@ export class RecomendacionService {
       const fin = new Date(dto.fecha_fin);
 
       if (fin <= inicio) {
-        throw new BadRequestException(
-          'La fecha de fin debe ser posterior a la fecha de inicio',
-        );
+        throw new BadRequestException('La fecha de fin debe ser posterior a la fecha de inicio');
       }
     }
 
@@ -251,11 +237,9 @@ export class RecomendacionService {
       WHERE pc.producto_id = ${productoId}
     `;
 
-    const calificacionPromedio =
-      parseFloat(calificacionesResult[0]?.calificacion_promedio) || 0;
+    const calificacionPromedio = parseFloat(calificacionesResult[0]?.calificacion_promedio) || 0;
     // Convertir BigInt a Number
-    const totalCalificaciones =
-      Number(calificacionesResult[0]?.total_calificaciones || 0);
+    const totalCalificaciones = Number(calificacionesResult[0]?.total_calificaciones || 0);
 
     // Actualizar o crear métrica
     const resultado = await this.prisma.metrica_producto.upsert({
@@ -277,7 +261,9 @@ export class RecomendacionService {
     // Convertir Decimal a number para cumplir con la interfaz
     return {
       ...resultado,
-      calificacion_promedio: parseFloat(resultado.calificacion_promedio.toString()),
+      calificacion_promedio: resultado.calificacion_promedio
+        ? parseFloat(resultado.calificacion_promedio.toString())
+        : 0,
     } as MetricaProducto;
   }
 
@@ -304,7 +290,7 @@ export class RecomendacionService {
 
       for (let i = 0; i < productosChatbot.length; i++) {
         const productoChatbot = productosChatbot[i];
-        
+
         // Buscar recomendación existente
         const existente = await this.prisma.recomendacion.findFirst({
           where: {
@@ -339,7 +325,7 @@ export class RecomendacionService {
               tipo_recomendacion: TipoRecomendacion.MAS_VENDIDO,
               prioridad: limite - i,
               activo: true,
-              metadata, 
+              metadata,
             },
           });
         }
@@ -350,16 +336,16 @@ export class RecomendacionService {
       return recomendacionesCreadas;
     } catch (error) {
       console.error('Error al generar recomendaciones con chatbot (Más Vendidos):', error.message);
-      throw new Error('Microservicio de chatbot no disponible. Por favor, verifica que esté corriendo en el puerto 6000.');
+      throw new Error(
+        'Microservicio de chatbot no disponible. Por favor, verifica que esté corriendo en el puerto 6000.',
+      );
     }
   }
 
   /**
    * Generar recomendaciones automáticas (mejor calificados)
    */
-  async generarRecomendacionesMejorCalificados(
-    limite: number = 5,
-  ): Promise<any[]> {
+  async generarRecomendacionesMejorCalificados(limite: number = 5): Promise<any[]> {
     const axios = require('axios');
     const CHATBOT_URL = 'http://localhost:6000/chatbot';
 
@@ -379,7 +365,7 @@ export class RecomendacionService {
 
       for (let i = 0; i < productosChatbot.length; i++) {
         const productoChatbot = productosChatbot[i];
-        
+
         // Buscar recomendación existente
         const existente = await this.prisma.recomendacion.findFirst({
           where: {
@@ -424,8 +410,13 @@ export class RecomendacionService {
 
       return recomendacionesCreadas;
     } catch (error) {
-      console.error('Error al generar recomendaciones con chatbot (Mejor Calificados):', error.message);
-      throw new Error('Microservicio de chatbot no disponible. Por favor, verifica que esté corriendo en el puerto 6000.');
+      console.error(
+        'Error al generar recomendaciones con chatbot (Mejor Calificados):',
+        error.message,
+      );
+      throw new Error(
+        'Microservicio de chatbot no disponible. Por favor, verifica que esté corriendo en el puerto 6000.',
+      );
     }
   }
 
@@ -442,9 +433,7 @@ export class RecomendacionService {
     });
 
     if (!recomendacion) {
-      throw new NotFoundException(
-        `Recomendación con ID ${dto.recomendacion_id} no encontrada`,
-      );
+      throw new NotFoundException(`Recomendación con ID ${dto.recomendacion_id} no encontrada`);
     }
 
     return this.prisma.recomendacion_interaccion.create({
@@ -463,10 +452,9 @@ export class RecomendacionService {
   async obtenerEstadisticasRecomendacion(
     recomendacionId: number,
   ): Promise<EstadisticasInteraccion> {
-    const interacciones =
-      await this.prisma.recomendacion_interaccion.findMany({
-        where: { recomendacion_id: recomendacionId },
-      });
+    const interacciones = await this.prisma.recomendacion_interaccion.findMany({
+      where: { recomendacion_id: recomendacionId },
+    });
 
     const total_vistas = interacciones.filter(
       (i) => i.tipo_interaccion === TipoInteraccion.VISTA,
@@ -481,8 +469,7 @@ export class RecomendacionService {
       (i) => i.tipo_interaccion === TipoInteraccion.COMPRADO,
     ).length;
 
-    const tasa_conversion =
-      total_vistas > 0 ? (total_comprados / total_vistas) * 100 : 0;
+    const tasa_conversion = total_vistas > 0 ? (total_comprados / total_vistas) * 100 : 0;
 
     return {
       recomendacion_id: recomendacionId,
@@ -554,10 +541,7 @@ export class RecomendacionService {
 
       // Procesar productos más vendidos desde el chatbot
       if (rankingVentas?.data?.exito && rankingVentas.data.datos?.productos) {
-        const productosChatbot = rankingVentas.data.datos.productos.slice(
-          0,
-          limite,
-        );
+        const productosChatbot = rankingVentas.data.datos.productos.slice(0, limite);
 
         recomendacionesCreadas.masVendidos = await Promise.all(
           productosChatbot.map(async (productoChatbot, index) => {
@@ -602,14 +586,8 @@ export class RecomendacionService {
       }
 
       // Procesar productos mejor calificados desde el chatbot
-      if (
-        rankingCalificaciones?.data?.exito &&
-        rankingCalificaciones.data.datos?.productos
-      ) {
-        const productosChatbot = rankingCalificaciones.data.datos.productos.slice(
-          0,
-          limite,
-        );
+      if (rankingCalificaciones?.data?.exito && rankingCalificaciones.data.datos?.productos) {
+        const productosChatbot = rankingCalificaciones.data.datos.productos.slice(0, limite);
 
         recomendacionesCreadas.mejorCalificados = await Promise.all(
           productosChatbot.map(async (productoChatbot, index) => {
@@ -660,13 +638,9 @@ export class RecomendacionService {
     } catch (error) {
       console.error('❌ Error al generar recomendaciones inteligentes:', error);
       // Fallback a métodos locales si el chatbot no está disponible
-      console.log(
-        '⚠️  Usando generación local como fallback...',
-      );
-      const masVendidos =
-        await this.generarRecomendacionesMasVendidos(limite);
-      const mejorCalificados =
-        await this.generarRecomendacionesMejorCalificados(limite);
+      console.log('⚠️  Usando generación local como fallback...');
+      const masVendidos = await this.generarRecomendacionesMasVendidos(limite);
+      const mejorCalificados = await this.generarRecomendacionesMejorCalificados(limite);
       return { masVendidos, mejorCalificados };
     }
   }
@@ -686,4 +660,3 @@ export class RecomendacionService {
     }
   }
 }
-

@@ -1,6 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
-import { PedidoHandler, PedidoContext } from './pedido-handler.base';
-import { ProductosNoDisponiblesException } from './pedido.exceptions';
+import { PedidoHandler} from '../abstract/pedido-handler.base';
+import { PedidoContext } from '../interfaces/pedido-context.interface';
+import { ProductosNoDisponiblesException } from '../exceptions/pedido.exceptions';
 
 export class ValidarDisponibilidadProductosHandler extends PedidoHandler {
   constructor() {

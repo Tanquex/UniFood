@@ -1,23 +1,6 @@
-import { PrismaService } from 'src/services/prisma.service';
-import { CrearPedidoDto } from 'src/models/pedido.model';
+import { PedidoContext } from '../interfaces/pedido-context.interface';
 
-export interface PrismaServiceInterface {
-  area_venta: any;
-  pedido: any;
-  producto: any;
-  cliente: any;
-  pago: any;
-}
 
-export interface PedidoContext {
-  dto: CrearPedidoDto;
-  clienteId: number;
-  prisma: PrismaServiceInterface;
-  areaVenta?: any;
-  pedidosEnEspera?: number;
-  advertencias?: string[];
-  gateway?: any;
-}
 
 export abstract class PedidoHandler {
   protected nextHandler: PedidoHandler | null = null;

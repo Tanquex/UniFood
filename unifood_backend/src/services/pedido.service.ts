@@ -20,8 +20,8 @@ import {
 import { PedidoGateway } from './../gateways/pedido.gateway';
 
 //Cadena de responsabilidades
-import { PedidoChainFactory } from 'src/handlers/pedido-chain.factory';
-import { PedidoContext } from 'src/handlers/pedido-handler.base';
+import { PedidoChainFactory } from 'src/pedido-chain-of-responsability/pedido-chain.factory';
+import { PedidoContext } from 'src/pedido-chain-of-responsability/interfaces/pedido-context.interface';
 
 @Injectable()
 export class PedidosService {

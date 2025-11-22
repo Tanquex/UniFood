@@ -1,5 +1,6 @@
 
-import { PedidoHandler, PedidoContext } from './pedido-handler.base';
+import { PedidoHandler } from '../abstract/pedido-handler.base';
+import { PedidoContext } from '../interfaces/pedido-context.interface';
 
 export class ProcesarPedidoHandler extends PedidoHandler {
 

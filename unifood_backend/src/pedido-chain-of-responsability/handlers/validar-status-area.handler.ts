@@ -1,5 +1,6 @@
-import { PedidoHandler, PedidoContext } from './pedido-handler.base';
-import { AreaInactivaException } from './pedido.exceptions';
+import { PedidoHandler} from '../abstract/pedido-handler.base';
+import { PedidoContext } from '../interfaces/pedido-context.interface';
+import { AreaInactivaException } from '../exceptions/pedido.exceptions';
 
 export class ValidarStatusAreaHandler extends PedidoHandler {
   constructor() {

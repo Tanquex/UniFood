@@ -1,10 +1,10 @@
-import { PedidoHandler } from './pedido-handler.base';
-import { ValidarAreaVentaHandler } from './validar-area-venta.handler';
-import { ValidarStatusAreaHandler } from './validar-status-area.handler';
-import { ValidarDisponibilidadProductosHandler } from './productos.handler';
-import { ValidarAlergiasHandler } from './verificar-alergias.handler';
-import { VerificarPedidosEsperaHandler } from './verificar-pedidos-espera';
-import { ProcesarPedidoHandler } from './procesar-pedido.handler';
+import { PedidoHandler } from './abstract/pedido-handler.base';
+import { ValidarAreaVentaHandler } from './handlers/validar-area-venta.handler';
+import { ValidarStatusAreaHandler } from './handlers/validar-status-area.handler';
+import { ValidarDisponibilidadProductosHandler } from './handlers/productos.handler';
+import { ValidarAlergiasHandler } from './handlers/verificar-alergias.handler';
+import { VerificarPedidosEsperaHandler } from './handlers/verificar-pedidos-espera';
+import { ProcesarPedidoHandler } from './handlers/procesar-pedido.handler';
 
 export class PedidoChainFactory {
   static create(): PedidoHandler {
