@@ -2,6 +2,9 @@ import { PedidoHandler, PedidoContext } from './pedido-handler.base';
 import { AreaNoEncontradaException } from './pedido.exceptions';
 
 export class ValidarAreaVentaHandler extends PedidoHandler {
+  constructor() {
+    super('Area de Venta.'); 
+  }
   protected async process(context: PedidoContext): Promise<void> {
     console.log('Validando existencia del área de venta...');
     

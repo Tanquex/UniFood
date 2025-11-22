@@ -2,6 +2,10 @@
 import { PedidoHandler, PedidoContext } from './pedido-handler.base';
 
 export class ProcesarPedidoHandler extends PedidoHandler {
+
+  constructor() {
+    super('Pedido Validado.'); 
+  }
   protected async process(context: PedidoContext): Promise<void> {
     console.log('Todas las validaciones completadas');
     console.log('Procesar pedido');

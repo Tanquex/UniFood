@@ -3,6 +3,10 @@ import { PedidoHandler, PedidoContext } from './pedido-handler.base';
 export class VerificarPedidosEsperaHandler extends PedidoHandler {
   private readonly UMBRAL_ADVERTENCIA = 5; // Advertir si hay más de 5 pedidos en espera
 
+  constructor() {
+    super('Tiempo de espera.'); 
+  }
+
   protected async process(context: PedidoContext): Promise<void> {
     console.log('Verificando pedidos en espera del área...');
     
@@ -25,6 +29,15 @@ export class VerificarPedidosEsperaHandler extends PedidoHandler {
         context.advertencias = [];
       }
       context.advertencias.push(mensaje);
+
+      if (context.gateway) {
+        context.gateway.emitValidacionProgreso(context.clienteId, {
+          handler: this.handlerName,
+          status: 'warning', 
+          message: mensaje,
+          timestamp: new Date().toISOString(),
+        });
+      }
       
       console.log(mensaje);
     } else {

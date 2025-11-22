@@ -22,11 +22,13 @@ import { ProductoComponent } from './components/producto/producto.component';
 import { ClienteProductosComponent } from './components/cliente-productos/cliente-productos.component';
 import { RecomendacionesHomeComponent } from './components/recomendaciones-home/recomendaciones-home.component';
 import { SupervisorRecomendacionesComponent } from './components/supervisor-recomendaciones/supervisor-recomendaciones.component';
+import { ClienteComponent } from './components/cliente/cliente.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'lista-vendedores', pathMatch: 'full' },
   { path: 'login', component: LoginComponent },
-  //{ path: 'borrar', component: BorrarComponent },
+  { path: 'registro-cliente', component: ClienteComponent},
+  { path: 'borrar', component: BorrarComponent },
   { path: 'menu', component: MenuComponent },
   { path: 'crear-vendedor', component: CrearVendedorComponent },
 
@@ -40,7 +42,7 @@ export const routes: Routes = [
       { path: 'recomendaciones', component: RecomendacionesHomeComponent },
       { path: 'carrito', component: ClientePedidoComponent },
       { path: 'menu', component: MenuComponent },
-      { path: 'productos', component: ClienteProductosComponent },
+      { path: 'productos', component: ClienteProductosComponent }
     ],
   },
 
@@ -78,5 +80,5 @@ export const routes: Routes = [
     ],
   },
 
-  { path: '**', redirectTo: '/login' },
+  { path: '**', redirectTo: '/registro-cliente' },
 ];

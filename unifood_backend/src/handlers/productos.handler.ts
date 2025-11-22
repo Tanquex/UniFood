@@ -3,8 +3,11 @@ import { PedidoHandler, PedidoContext } from './pedido-handler.base';
 import { ProductosNoDisponiblesException } from './pedido.exceptions';
 
 export class ValidarDisponibilidadProductosHandler extends PedidoHandler {
+  constructor() {
+    super('Disponibilidad de Productos.'); 
+  }
   protected async process(context: PedidoContext): Promise<void> {
-    console.log('🔍 Verificando disponibilidad de productos...');
+    console.log('Verificando disponibilidad de productos...');
     
     const productosInactivos: string[] = [];
 

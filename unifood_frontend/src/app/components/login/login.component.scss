@@ -180,3 +180,31 @@ input::placeholder {
     font-size: 15px;
   }
 }
+
+.login-link {
+  text-align: center;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 2px solid #e8d4a8;
+}
+
+.login-link p {
+  margin: 0;
+  color: #666;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.login-link a {
+  color: #52a7a3;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  border-bottom: 2px solid transparent;
+}
+
+.login-link a:hover {
+  color: #4a9693;
+  border-bottom-color: #52a7a3;
+}

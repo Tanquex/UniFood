@@ -53,10 +53,10 @@ export class ProductosNoDisponiblesException extends PedidoException {
   constructor(
     productosInactivos: string[],
   ) {
-    let mensaje = 'No se puede procesar el pedido:';
+    let mensaje = 'Productos no disponibles:';
     
     if (productosInactivos.length > 0) {
-      mensaje += `\nProductos inactivos: ${productosInactivos.join(', ')}`;
+      mensaje += `\n ${productosInactivos.join('\n ')}`;
     }
 
     super(

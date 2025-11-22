@@ -20,8 +20,8 @@ import {
 import { PedidoGateway } from './../gateways/pedido.gateway';
 
 //Cadena de responsabilidades
-import { PedidoChainFactory } from 'src/pedido/handlers/pedido-chain.factory';
-import { PedidoContext } from 'src/pedido/handlers/pedido-handler.base';
+import { PedidoChainFactory } from 'src/handlers/pedido-chain.factory';
+import { PedidoContext } from 'src/handlers/pedido-handler.base';
 
 @Injectable()
 export class PedidosService {
@@ -44,6 +44,7 @@ export class PedidosService {
       dto,
       clienteId,
       prisma: this.prisma,
+      gateway: this.pedidoGateway,
     };
 
     //Ejecutar las validaciones

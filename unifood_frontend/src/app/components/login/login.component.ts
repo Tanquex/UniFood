@@ -94,4 +94,15 @@ export class LoginComponent {
       },
     });
   }
+
+  irRegistroCliente(){
+    this.router.navigate(['registro-cliente']);
+  }
+
+  /**
+   * irACarrito(): void {
+    this.menuAbierto = false;
+    this.router.navigate(['/cliente/carrito']);
+  }
+   */
 }

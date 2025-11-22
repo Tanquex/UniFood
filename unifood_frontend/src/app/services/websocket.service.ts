@@ -35,7 +35,7 @@ export class WebsocketService {
     this.socket.on('connect', () => {
       this.ngZone.run(() => {
         this.conectado = true;
-        this.reRegisterBufferedListeners(); 
+        this.reRegisterBufferedListeners();
       });
     });
 
@@ -155,5 +155,27 @@ export class WebsocketService {
     }
 
     this.socket.emit('suscribirVendedor', payload);
+  }
+
+  /**
+   * Método para remover un listener específico
+   */
+  off(evento: string): void {
+    if (!this.socket) return;
+    this.socket.off(evento);
+    // Remover del buffer también
+    this.eventBuffer = this.eventBuffer.filter((e) => e.name !== evento);
+  }
+
+  /**
+   * Método para escuchar eventos de progreso de validación
+   */
+  onValidacionProgreso() {
+    return this.on<{
+      handler: string;
+      status: 'processing' | 'success' | 'error';
+      message?: string;
+      timestamp: string;
+    }>('validacion-progreso');
   }
 }

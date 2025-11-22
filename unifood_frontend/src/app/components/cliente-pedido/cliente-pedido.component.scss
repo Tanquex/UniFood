@@ -680,3 +680,158 @@ $danger: #E76F51;
     grid-template-columns: 1fr;
   }
 }
+
+.validacion-cadena {
+  padding: 1.5rem;
+  background: #f9fafb;
+  border-radius: 12px;
+  margin-bottom: 1rem;
+}
+
+.cadena-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  margin-bottom: 1rem;
+}
+
+.cadena-item {
+  display: flex;
+  align-items: center;
+}
+
+.nodo {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  
+  &.nodo-pending {
+    background: #e5e7eb;
+    color: #9ca3af;
+    border: 3px solid #d1d5db;
+  }
+  
+  &.nodo-processing {
+    background: #dbeafe;
+    color: #2563eb;
+    border: 3px solid #3b82f6;
+    animation: pulse 1.5s ease-in-out infinite;
+    
+    .spinner {
+      animation: spin 1s linear infinite;
+    }
+  }
+  
+  &.nodo-success {
+    background: #d1fae5;
+    color: #059669;
+    border: 3px solid #10b981;
+    animation: successPop 0.4s ease;
+  }
+  
+  &.nodo-warning {
+    background: #fef3c7;
+    color: #d97706;
+    border: 3px solid #f59e0b;
+    animation: successPop 0.4s ease;
+  }
+  
+  &.nodo-error {
+    background: #fee2e2;
+    color: #dc2626;
+    border: 3px solid #ef4444;
+    animation: shake 0.5s ease;
+  }
+}
+
+.linea {
+  width: 40px;
+  height: 4px;
+  background: #d1d5db;
+  transition: all 0.4s ease;
+  
+  &.linea-active {
+    background: #10b981;
+    animation: lineGrow 0.4s ease;
+  }
+  
+  &.linea-warning {
+    background: #f59e0b;
+    animation: lineGrow 0.4s ease;
+  }
+  
+  &.linea-error {
+    background: #ef4444;
+  }
+}
+
+.validacion-actual {
+  text-align: center;
+  padding: 0.75rem;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  
+  p {
+    margin: 0;
+    font-weight: 600;
+    color: #1f2937;
+    font-size: 0.95rem;
+  }
+  
+  small {
+    color: #6b7280;
+    font-size: 0.85rem;
+    display: block;
+    margin-top: 0.25rem;
+  }
+}
+
+// Animaciones
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 4px 16px rgba(37, 99, 235, 0.5);
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes successPop {
+  0% { transform: scale(0.8); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+@keyframes lineGrow {
+  from { 
+    width: 0;
+    opacity: 0; 
+  }
+  to { 
+    width: 40px;
+    opacity: 1; 
+  }
+}

@@ -29,19 +29,14 @@ export class RecomendacionService {
   /**
    * Crear una nueva recomendación
    */
-  async crearRecomendacion(
-    dto: CrearRecomendacionDto,
-    supervisorId?: number,
-  ): Promise<any> {
+  async crearRecomendacion(dto: CrearRecomendacionDto, supervisorId?: number): Promise<any> {
     // Verificar que el producto existe
     const producto = await this.prisma.producto.findUnique({
       where: { id: dto.producto_id },
     });
 
     if (!producto) {
-      throw new NotFoundException(
-        `Producto con ID ${dto.producto_id} no encontrado`,
-      );
+      throw new NotFoundException(`Producto con ID ${dto.producto_id} no encontrado`);
     }
 
     // Validar fechas
@@ -50,9 +45,7 @@ export class RecomendacionService {
       const fin = new Date(dto.fecha_fin);
 
       if (fin <= inicio) {
-        throw new BadRequestException(
-          'La fecha de fin debe ser posterior a la fecha de inicio',
-        );
+        throw new BadRequestException('La fecha de fin debe ser posterior a la fecha de inicio');
       }
     }
 
@@ -76,9 +69,7 @@ export class RecomendacionService {
   /**
    * Obtener recomendaciones con filtros
    */
-  async obtenerRecomendaciones(
-    filtros?: FiltrosRecomendacionDto,
-  ): Promise<any[]> {
+  async obtenerRecomendaciones(filtros?: FiltrosRecomendacionDto): Promise<any[]> {
     const where: any = {};
 
     if (filtros?.tipo) {
@@ -165,10 +156,7 @@ export class RecomendacionService {
   /**
    * Actualizar recomendación
    */
-  async actualizarRecomendacion(
-    id: number,
-    dto: ActualizarRecomendacionDto,
-  ): Promise<any> {
+  async actualizarRecomendacion(id: number, dto: ActualizarRecomendacionDto): Promise<any> {
     // Verificar que existe
     const existe = await this.prisma.recomendacion.findUnique({
       where: { id },
@@ -184,9 +172,7 @@ export class RecomendacionService {
       const fin = new Date(dto.fecha_fin);
 
       if (fin <= inicio) {
-        throw new BadRequestException(
-          'La fecha de fin debe ser posterior a la fecha de inicio',
-        );
+        throw new BadRequestException('La fecha de fin debe ser posterior a la fecha de inicio');
       }
     }
 
@@ -249,11 +235,9 @@ export class RecomendacionService {
       WHERE pc.producto_id = ${productoId}
     `;
 
-    const calificacionPromedio =
-      parseFloat(calificacionesResult[0]?.calificacion_promedio) || 0;
+    const calificacionPromedio = parseFloat(calificacionesResult[0]?.calificacion_promedio) || 0;
     // Convertir BigInt a Number
-    const totalCalificaciones =
-      Number(calificacionesResult[0]?.total_calificaciones || 0);
+    const totalCalificaciones = Number(calificacionesResult[0]?.total_calificaciones || 0);
 
     // Actualizar o crear métrica
     const resultado = await this.prisma.metrica_producto.upsert({
@@ -275,7 +259,9 @@ export class RecomendacionService {
     // Convertir Decimal a number para cumplir con la interfaz
     return {
       ...resultado,
-      calificacion_promedio: parseFloat(resultado.calificacion_promedio.toString()),
+      calificacion_promedio: resultado.calificacion_promedio
+        ? parseFloat(resultado.calificacion_promedio.toString())
+        : 0,
     } as MetricaProducto;
   }
 
@@ -289,9 +275,7 @@ export class RecomendacionService {
       select: { id: true },
     });
 
-    await Promise.all(
-      productos.map((p) => this.actualizarMetricasProducto(p.id)),
-    );
+    await Promise.all(productos.map((p) => this.actualizarMetricasProducto(p.id)));
 
     // Obtener productos más vendidos
     const masVendidos = await this.prisma.metrica_producto.findMany({
@@ -341,18 +325,14 @@ export class RecomendacionService {
   /**
    * Generar recomendaciones automáticas (mejor calificados)
    */
-  async generarRecomendacionesMejorCalificados(
-    limite: number = 5,
-  ): Promise<any[]> {
+  async generarRecomendacionesMejorCalificados(limite: number = 5): Promise<any[]> {
     // Actualizar métricas
     const productos = await this.prisma.producto.findMany({
       where: { estado: true },
       select: { id: true },
     });
 
-    await Promise.all(
-      productos.map((p) => this.actualizarMetricasProducto(p.id)),
-    );
+    await Promise.all(productos.map((p) => this.actualizarMetricasProducto(p.id)));
 
     // Obtener mejor calificados (mínimo 3 calificaciones)
     const mejorCalificados = await this.prisma.metrica_producto.findMany({
@@ -411,9 +391,7 @@ export class RecomendacionService {
     });
 
     if (!recomendacion) {
-      throw new NotFoundException(
-        `Recomendación con ID ${dto.recomendacion_id} no encontrada`,
-      );
+      throw new NotFoundException(`Recomendación con ID ${dto.recomendacion_id} no encontrada`);
     }
 
     return this.prisma.recomendacion_interaccion.create({
@@ -432,10 +410,9 @@ export class RecomendacionService {
   async obtenerEstadisticasRecomendacion(
     recomendacionId: number,
   ): Promise<EstadisticasInteraccion> {
-    const interacciones =
-      await this.prisma.recomendacion_interaccion.findMany({
-        where: { recomendacion_id: recomendacionId },
-      });
+    const interacciones = await this.prisma.recomendacion_interaccion.findMany({
+      where: { recomendacion_id: recomendacionId },
+    });
 
     const total_vistas = interacciones.filter(
       (i) => i.tipo_interaccion === TipoInteraccion.VISTA,
@@ -450,8 +427,7 @@ export class RecomendacionService {
       (i) => i.tipo_interaccion === TipoInteraccion.COMPRADO,
     ).length;
 
-    const tasa_conversion =
-      total_vistas > 0 ? (total_comprados / total_vistas) * 100 : 0;
+    const tasa_conversion = total_vistas > 0 ? (total_comprados / total_vistas) * 100 : 0;
 
     return {
       recomendacion_id: recomendacionId,
@@ -492,4 +468,3 @@ export class RecomendacionService {
     };
   }
 }
-

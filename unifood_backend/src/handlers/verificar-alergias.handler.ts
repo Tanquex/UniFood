@@ -1,6 +1,10 @@
 import { PedidoHandler, PedidoContext } from './pedido-handler.base';
 
 export class ValidarAlergiasHandler extends PedidoHandler {
+
+  constructor() {
+    super('Alergias.'); 
+  }
   protected async process(context: PedidoContext): Promise<void> {
     console.log('Verificando alergias del cliente...');
     
