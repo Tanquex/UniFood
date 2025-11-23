@@ -282,7 +282,7 @@ export class ClientePedidoComponent implements OnInit {
       error: (err) => {
         this.procesando = false;
         //this.mostrarProgresoValidacion = false;
-        console.error('❌ Error al crear pedido:', err);
+        console.error('Error al crear pedido:', err);
         Swal.fire({
           icon: 'warning',
           title: 'Intentelo de nuevo más tarde',
@@ -303,15 +303,37 @@ export class ClientePedidoComponent implements OnInit {
   }
 
   private actualizarValidacion(data: any) {
+      data.status = (data.status || "").toLowerCase();
+
     const index = this.validaciones.findIndex((v) => v.nombre === data.handler);
     if (index !== -1) {
       this.validaciones[index].status = data.status;
       this.validaciones[index].message = data.message;
 
-      if (data.status === 'processing' || data.status === 'error' || data.status === 'warning') {
+      if (data.status === 'warning' && data.message) {
+        this.mostrarAdvertencia(data.message);
+      }
+
+      if (
+        data.status === 'processing' ||
+        data.status === 'error' 
+      ) {
         this.validacionActual = this.validaciones[index];
       }
     }
+  }
+
+  private mostrarAdvertencia(mensaje: string) {
+    Swal.fire({
+      title: 'Advertencia!',
+      position: 'top-end',
+      text: mensaje,
+      icon: 'warning',
+      showConfirmButton: true,
+      confirmButtonText: 'Entendido',
+      confirmButtonColor: '#dcbb6cff',
+      toast: true,
+    });
   }
 
   private resetearValidaciones() {
