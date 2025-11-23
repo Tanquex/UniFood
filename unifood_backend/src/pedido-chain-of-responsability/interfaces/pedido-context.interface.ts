@@ -9,4 +9,11 @@ export interface PedidoContext {
   pedidosEnEspera?: number;
   advertencias?: string[];
   gateway?: any;
+  alergiaIAService?: any; // Servicio de IA para validación de alergias
+  alternativasProductos?: Array<{
+    productoOriginalId: number;
+    productoOriginalNombre: string;
+    productoAlternativo: any;
+    razon: string;
+  }>; // Productos alternativos recomendados
 }

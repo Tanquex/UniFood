@@ -240,9 +240,51 @@
         <!-- Etiqueta del paso actual -->
         <div class="validacion-actual" *ngIf="validacionActual">
           <p>{{ validacionActual.nombre }}</p>
-          <!--small *ngIf="validacionActual.message">{{
-            validacionActual.message
-          }}</!--small-->
+          <small *ngIf="validacionActual.message" class="validacion-message">
+            {{ validacionActual.message }}
+          </small>
+        </div>
+
+        <!-- Advertencias de alergias -->
+        <div class="advertencias-alergias" *ngIf="advertenciasAlergias.length > 0">
+          <div class="advertencia-item" *ngFor="let advertencia of advertenciasAlergias">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span [innerHTML]="advertencia"></span>
+          </div>
+
+          <!-- Alternativas de productos -->
+          <div class="alternativas-productos" *ngIf="alternativasProductos.length > 0">
+            <p class="alternativas-titulo">
+              <i class="fas fa-lightbulb"></i>
+              Productos alternativos sugeridos:
+            </p>
+            <div class="alternativa-item" *ngFor="let alt of alternativasProductos">
+              <div class="alternativa-info">
+                <p class="alternativa-original">
+                  <i class="fas fa-times-circle"></i>
+                  {{ alt.productoOriginalNombre }}
+                </p>
+                <i class="fas fa-arrow-down alternativa-flecha"></i>
+                <p class="alternativa-nueva">
+                  <i class="fas fa-check-circle"></i>
+                  {{ alt.productoAlternativo.nombre }} - ${{ alt.productoAlternativo.precio }}
+                </p>
+                <p class="alternativa-razon">{{ alt.razon }}</p>
+              </div>
+              <button 
+                class="btn-reemplazar"
+                (click)="reemplazarProductoEnCarrito(
+                  alt.productoOriginalId,
+                  alt.productoAlternativo.id,
+                  alt.productoAlternativo.nombre,
+                  alt.productoAlternativo.precio
+                )"
+              >
+                <i class="fas fa-exchange-alt"></i>
+                Reemplazar
+              </button>
+            </div>
+          </div>
         </div>
         <button class="btn-ocultar" (click)="cerrarValidacion()">
           <i class="fas fa-eye-slash"></i>

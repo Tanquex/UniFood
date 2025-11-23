@@ -70,11 +70,28 @@ export class ProductosNoDisponiblesException extends PedidoException {
 }
 
 export class AlergiasDetectadasException extends PedidoException {
-  constructor(alergias: string[], productosConAlergenos: string[]) {
+  public alternativas?: Array<{
+    productoOriginalId: number;
+    productoOriginalNombre: string;
+    productoAlternativo: any;
+    razon: string;
+  }>;
+
+  constructor(
+    alergias: string[], 
+    productosConAlergenos: string[],
+    alternativas?: Array<{
+      productoOriginalId: number;
+      productoOriginalNombre: string;
+      productoAlternativo: any;
+      razon: string;
+    }>
+  ) {
     super(
       PedidoErrorType.ALERGIAS_DETECTADAS,
       'Se detectaron productos que contienen ingredientes a los que eres alérgico',
-      { alergias, productosConAlergenos }
+      { alergias, productosConAlergenos, alternativas }
     );
+    this.alternativas = alternativas;
   }
 }

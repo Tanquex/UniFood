@@ -18,6 +18,7 @@ import {
   OpcionesTicketDto,
 } from '../models/pedido.model';
 import { PedidoGateway } from './../gateways/pedido.gateway';
+import { AlergiaIAService } from './alergia-ia.service';
 
 //Cadena de responsabilidades
 import { PedidoChainFactory } from 'src/pedido-chain-of-responsability/pedido-chain.factory';
@@ -32,6 +33,7 @@ export class PedidosService {
     private readonly pagosClient: PagosClient,
     private readonly comunicacionClient: ComunicacionClient,
     private readonly pedidoGateway: PedidoGateway,
+    private readonly alergiaIAService: AlergiaIAService,
   ) {}
 
   // =============== MÉTODOS PARA CLIENTE ===============
@@ -45,6 +47,7 @@ export class PedidosService {
       clienteId,
       prisma: this.prisma,
       gateway: this.pedidoGateway,
+      alergiaIAService: this.alergiaIAService,
     };
 
     //Ejecutar las validaciones

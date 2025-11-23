@@ -10,6 +10,8 @@ import {
 import { Server, Socket } from 'socket.io';
 import { Logger } from '@nestjs/common';
 import { GeminiService } from '../services/gemini.service';
+import { AlergiaIAService } from '../services/alergia-ia.service';
+import { PrismaClient } from '@prisma/client';
 import { ChatMessageDto } from '../models/chat.model';
 
 type ConnectedUser = {
@@ -31,8 +33,12 @@ export class ChatGateway
 
   private readonly logger = new Logger(ChatGateway.name);
   private readonly connectedUsers = new Map<string, ConnectedUser>();
+  private readonly prisma = new PrismaClient();
 
-  constructor(private readonly geminiService: GeminiService) {}
+  constructor(
+    private readonly geminiService: GeminiService,
+    private readonly alergiaIAService: AlergiaIAService,
+  ) {}
 
   async handleConnection(client: Socket) {
     try {
@@ -98,10 +104,21 @@ export class ChatGateway
     }
 
     try {
+      // Detectar alergias en el mensaje (en paralelo con la generación de recomendación)
+      const detectarAlergiasPromise = this.detectarYGuardarAlergias(
+        sanitizedMessage,
+        userInfo.userId,
+      );
+
       const response = await this.geminiService.generateRecommendation(
         { ...data, mensaje: sanitizedMessage },
         userInfo.userId,
       );
+
+      // Esperar a que termine la detección de alergias (no bloquea la respuesta)
+      detectarAlergiasPromise.catch((err) => {
+        this.logger.warn(`Error detectando alergias: ${err.message}`);
+      });
 
       client.emit('message_response', response);
 
@@ -287,5 +304,87 @@ export class ChatGateway
     }
 
     return value.replace(/[^a-zA-Z0-9_-]/g, '');
+  }
+
+  /**
+   * Detecta alergias en el mensaje del chat y las guarda en el perfil del cliente
+   */
+  private async detectarYGuardarAlergias(
+    mensaje: string,
+    userId: number,
+  ): Promise<void> {
+    try {
+      // Detectar alergias usando IA
+      const alergiasDetectadas = await this.alergiaIAService.detectarAlergiasEnMensaje(mensaje);
+
+      if (alergiasDetectadas.length === 0) {
+        return; // No se detectaron alergias
+      }
+
+      this.logger.log(
+        `🔍 Alergias detectadas para usuario ${userId}: ${alergiasDetectadas.join(', ')}`,
+      );
+
+      // Obtener el cliente asociado al usuario
+      const cliente = await this.prisma.cliente.findFirst({
+        where: { usuario_id: userId },
+      });
+
+      if (!cliente) {
+        this.logger.warn(`Cliente no encontrado para usuario ${userId}`);
+        return;
+      }
+
+      // Obtener alergias existentes
+      let alergiasExistentes: string[] = [];
+      const alergiaField = (cliente as any).alergia;
+      if (alergiaField) {
+        if (typeof alergiaField === 'string') {
+          try {
+            alergiasExistentes = JSON.parse(alergiaField);
+          } catch {
+            alergiasExistentes = [alergiaField];
+          }
+        } else if (Array.isArray(alergiaField)) {
+          alergiasExistentes = alergiaField;
+        }
+      }
+
+      // Combinar alergias existentes con las nuevas (sin duplicados)
+      const alergiasActualizadas = [
+        ...new Set([...alergiasExistentes, ...alergiasDetectadas]),
+      ];
+
+      // Guardar alergias actualizadas
+      await this.prisma.$executeRaw`
+        UPDATE cliente 
+        SET alergia = ${JSON.stringify(alergiasActualizadas)}::jsonb
+        WHERE id = ${cliente.id}
+      `;
+
+      this.logger.log(
+        `✅ Alergias actualizadas para cliente ${cliente.id}: ${alergiasActualizadas.join(', ')}`,
+      );
+
+      // Notificar al cliente que se detectaron alergias
+      const userEntry = Array.from(this.connectedUsers.entries()).find(
+        ([_, info]) => info.userId === userId,
+      );
+
+      if (userEntry) {
+        const [, userInfo] = userEntry;
+        userInfo.socket.emit('alergias_detectadas', {
+          alergias: alergiasDetectadas,
+          mensaje: `He detectado que tienes alergias a: ${alergiasDetectadas.join(', ')}. Las he guardado en tu perfil para futuros pedidos.`,
+          timestamp: new Date().toISOString(),
+        });
+      }
+    } catch (error: any) {
+      this.logger.error(
+        `Error detectando/guardando alergias: ${error.message}`,
+        error.stack,
+      );
+      // No lanzar error para no interrumpir el flujo del chat
+    }
   }
 }

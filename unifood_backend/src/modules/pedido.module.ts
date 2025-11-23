@@ -6,6 +6,7 @@ import { PedidosService } from "src/services/pedido.service";
 import { PedidoGateway } from "src/gateways/pedido.gateway";
 import { PagosClient } from "src/clients/pagos.client";
 import { ComunicacionClient } from "src/clients/comunicacion.client";
+import { AlergiaIAService } from "src/services/alergia-ia.service";
 import { PrismaClient } from "@prisma/client";
 
 
@@ -25,8 +26,9 @@ import { PrismaClient } from "@prisma/client";
     PedidoGateway,
     PagosClient,
     ComunicacionClient,
+    AlergiaIAService,
     PrismaClient
   ],
-  exports: [PedidosService, PedidoGateway]
+  exports: [PedidosService, PedidoGateway, AlergiaIAService]
 })
 export class PedidosModule {}

@@ -27,41 +27,48 @@ export class ProductoService {
   }
 
   async create(createProductoDto: CreateProductoDto): Promise<Producto> {
-    const {
-      nombre,
-      descripcion,
-      precio,
-      imagen_url,
-      categoria_id,
-      area_venta_id,
-      estado,
-      tiempo_preparacion,
-      ingredientes,
-      calorias,
-      vendedorFK
-    } = createProductoDto;
-    
-    const result = await this.dataSource.query(
-      `INSERT INTO producto 
-       (nombre, descripcion, precio, imagen_url, categoria_id, area_venta_id, 
-        estado, tiempo_preparacion, ingredientes, calorias, "vendedorFK") 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
-      [
+    try {
+      const {
         nombre,
         descripcion,
         precio,
         imagen_url,
         categoria_id,
         area_venta_id,
-        estado ?? true,
+        estado,
         tiempo_preparacion,
-        ingredientes ? JSON.stringify(ingredientes) : null, // CONVERTIR A JSON
+        ingredientes,
         calorias,
         vendedorFK
-      ]
-    );
-    
-    return result[0] as Producto;
+      } = createProductoDto;
+      
+      const result = await this.dataSource.query(
+        `INSERT INTO producto 
+         (nombre, descripcion, precio, imagen_url, categoria_id, area_venta_id, 
+          estado, tiempo_preparacion, ingredientes, calorias, vendedorfk) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
+        [
+          nombre,
+          descripcion,
+          precio,
+          imagen_url,
+          categoria_id,
+          area_venta_id,
+          estado ?? true,
+          tiempo_preparacion,
+          ingredientes ? JSON.stringify(ingredientes) : null, // CONVERTIR A JSON
+          calorias,
+          vendedorFK
+        ]
+      );
+      
+      return result[0] as Producto;
+    } catch (error) {
+      console.error('Error en ProductoService.create:', error);
+      console.error('Error details:', error.message);
+      console.error('Error code:', error.code);
+      throw error;
+    }
   }
 
   async update(id: number, updateProductoDto: UpdateProductoDto): Promise<Producto> {
@@ -132,7 +139,7 @@ export class ProductoService {
     }
     
     if (updateProductoDto.vendedorFK !== undefined) {
-      fields.push(`"vendedorFK" = $${paramCount}`);
+      fields.push(`vendedorfk = $${paramCount}`);
       values.push(updateProductoDto.vendedorFK);
       paramCount++;
     }

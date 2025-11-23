@@ -31,6 +31,10 @@ export class ChatComponent implements OnInit, OnDestroy {
   mostrarModalAgregar: boolean = false;
   productoParaAgregar: any = null;
 
+  // Para notificaciones de alergias
+  alergiasDetectadas: string[] = [];
+  mostrarNotificacionAlergias: boolean = false;
+
   constructor(
     private http: HttpClient,
     private authService: AuthService,
@@ -83,6 +87,38 @@ export class ChatComponent implements OnInit, OnDestroy {
     this.chatService.onError().subscribe((error: any) => {
       console.error('Chat error:', error);
       this.addBotMessage('Lo siento, hubo un error. Por favor, intenta de nuevo.');
+    });
+
+    // Escuchar detección de alergias
+    this.chatService.onAlergiasDetectadas().subscribe((data: any) => {
+      this.alergiasDetectadas = data.alergias || [];
+      this.mostrarNotificacionAlergias = true;
+      
+      // Mostrar notificación
+      Swal.fire({
+        icon: 'info',
+        title: 'Alergias detectadas',
+        html: `
+          <p>He detectado que tienes alergias a:</p>
+          <ul style="text-align: left; margin: 10px 0;">
+            ${this.alergiasDetectadas.map(a => `<li><strong>${a}</strong></li>`).join('')}
+          </ul>
+          <p style="margin-top: 15px; font-size: 14px;">
+            Las he guardado en tu perfil para futuros pedidos. 
+            Te avisaré si algún producto contiene estos ingredientes.
+          </p>
+        `,
+        confirmButtonText: 'Entendido',
+        confirmButtonColor: '#5B9A97',
+        timer: 5000,
+        timerProgressBar: true
+      });
+
+      // Agregar mensaje al chat
+      this.addBotMessage(
+        `He detectado que tienes alergias a: ${this.alergiasDetectadas.join(', ')}. ` +
+        `Las he guardado en tu perfil. Te avisaré si algún producto contiene estos ingredientes.`
+      );
     });
   }
 

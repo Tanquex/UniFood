@@ -18,6 +18,7 @@ export class ChatService {
   private recommendationsSubject = new Subject<ProductRecommendation[]>();
   private connectionStatusSubject = new BehaviorSubject<boolean>(false);
   private errorSubject = new Subject<any>();
+  private alergiasDetectadasSubject = new Subject<any>();
 
   constructor(
     private http: HttpClient,
@@ -26,8 +27,9 @@ export class ChatService {
 
   connect(sessionId: string): void {
     try {
-      // Conexión sin JWT por ahora - usando userId de prueba
-      const userId = 1; // ID de usuario temporal para pruebas
+      // Obtener userId del usuario autenticado
+      const user = this.authService.obtenerUsuario();
+      const userId = user?.id || 1; // Fallback a 1 si no hay usuario
 
       this.socket = io(`${this.wsUrl}/chat`, {
         auth: {
@@ -64,6 +66,12 @@ export class ChatService {
 
       this.socket.on('connected', (data: any) => {
         console.log('Chat connected:', data);
+      });
+
+      // Escuchar detección de alergias
+      this.socket.on('alergias_detectadas', (data: any) => {
+        console.log('Alergias detectadas:', data);
+        this.alergiasDetectadasSubject.next(data);
       });
 
     } catch (error) {
@@ -104,6 +112,10 @@ export class ChatService {
 
   onError(): Observable<any> {
     return this.errorSubject.asObservable();
+  }
+
+  onAlergiasDetectadas(): Observable<any> {
+    return this.alergiasDetectadasSubject.asObservable();
   }
 
   // Métodos REST para funcionalidades adicionales
