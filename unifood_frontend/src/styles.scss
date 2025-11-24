@@ -331,3 +331,21 @@ ul, ol {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+
+/* Asegura que SweetAlert esté siempre encima de TODO */
+.swal2-container {
+  z-index: 99999 !important;
+}
+
+.swal2-popup {
+  z-index: 100000 !important;
+}
+
+.swal2-backdrop-show {
+  z-index: 99998 !important;
+}
+
+.swal2-container-show {
+  z-index: 99999 !important;
+}

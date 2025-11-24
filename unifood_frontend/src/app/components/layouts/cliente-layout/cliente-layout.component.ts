@@ -6,7 +6,12 @@ import {
   ElementRef,
   NgZone,
 } from '@angular/core';
-import { Router, RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import {
+  Router,
+  RouterOutlet,
+  RouterLink,
+  RouterLinkActive,
+} from '@angular/router';
 import { AuthService } from '../../../services/auth.service';
 import { WebsocketService } from '../../../services/websocket.service';
 import { PedidoService } from '../../../services/pedido.service';
@@ -17,10 +22,17 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ChatFloatComponent } from '../../chat-float/chat-float.component';
 import { ClientePedidoComponent } from '../../cliente-pedido/cliente-pedido.component';
+import { QrService } from '../../../services/qr.service';
 
 @Component({
   selector: 'app-cliente-layout',
-  imports: [CommonModule, RouterOutlet, FormsModule, ChatFloatComponent, ClientePedidoComponent],
+  imports: [
+    CommonModule,
+    RouterOutlet,
+    FormsModule,
+    ChatFloatComponent,
+    ClientePedidoComponent,
+  ],
   templateUrl: './cliente-layout.component.html',
   styleUrls: ['./cliente-layout.component.scss'],
 })
@@ -59,7 +71,8 @@ export class ClienteLayoutComponent implements OnInit, OnDestroy {
     private wsService: WebsocketService,
     private pedidoService: PedidoService,
     private router: Router,
-    private ngZone: NgZone
+    private ngZone: NgZone,
+    private qrService: QrService
   ) {}
 
   ngOnInit(): void {
@@ -330,7 +343,7 @@ export class ClienteLayoutComponent implements OnInit, OnDestroy {
   abrirModalPagoDesdeCarrito(): void {
     // Cerrar el modal del carrito primero
     this.mostrarModalCarrito = false;
-    
+
     const datosStr = localStorage.getItem('pedido_temporal');
     if (!datosStr) return;
 
@@ -822,14 +835,14 @@ export class ClienteLayoutComponent implements OnInit, OnDestroy {
 
   irAPedidos(): void {
     this.menuAbierto = false;
-    this.abrirSeguimiento()
+    this.abrirSeguimiento();
   }
-  
+
   irAProductos(): void {
     this.menuAbierto = false;
     this.router.navigate(['/cliente/productos']);
   }
-  
+
   irARecomendaciones(): void {
     this.menuAbierto = false;
     this.router.navigate(['/cliente/recomendaciones']);
@@ -846,5 +859,46 @@ export class ClienteLayoutComponent implements OnInit, OnDestroy {
 
   abrirMenu() {
     this.menuAbierto = !this.menuAbierto;
+  }
+
+  //Generar QR seguimiento
+
+  async mostrarQR(pedido: Pedido): Promise<void> {
+    try {
+      const qrImage = await this.qrService.generarQR(pedido.id);
+
+      Swal.fire({
+        title: 'Código QR del Pedido',
+        html: `
+        <img src="${qrImage}" alt="QR Code" style="width: 100%; max-width: 300px; margin: 1rem auto; display: block;">
+        <p style="margin-top: 1rem; color: #7A8A8B;">
+          Escanea este código para seguir tu pedido sin iniciar sesión
+        </p>
+      `,
+        showCancelButton: true,
+        confirmButtonText: 'Descargar QR',
+        cancelButtonText: 'Cerrar',
+        confirmButtonColor: '#5B9A97',
+        cancelButtonColor: '#E76F51',
+      }).then((result) => {
+        if (result.isConfirmed) {
+          this.descargarQR(qrImage, pedido.id);
+        }
+      });
+    } catch (error) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'No se pudo generar el código QR',
+        confirmButtonColor: '#E76F51',
+      });
+    }
+  }
+
+  descargarQR(qrImage: string, pedidoId: number): void {
+    const link = document.createElement('a');
+    link.href = qrImage;
+    link.download = `pedido-${pedidoId}-qr.png`;
+    link.click();
   }
 }

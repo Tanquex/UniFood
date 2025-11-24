@@ -291,7 +291,7 @@ export class PedidosService {
 
         return pedidoCompleto;
       } catch (error) {
-        console.error('❌ Error al crear pedido con tarjeta:', error);
+        console.error(' Error al crear pedido con tarjeta:', error);
         throw new BadRequestException(error.message || 'Error al procesar el pedido con tarjeta');
       }
     } else {
@@ -1009,5 +1009,56 @@ export class PedidosService {
     }
 
     return pedido;
+  }
+
+  //Metodo endpoint para obtener el pedido del seguimiento publico
+  async obtenerPedidoPorIdPublico(id: number): Promise<any> {
+    const pedido = await this.prisma.pedido.findUnique({
+      where: { id },
+      include: {
+        pedido_productos: {
+          include: {
+            producto: true,
+          },
+        },
+        area_venta: true,
+        pedido_estado: true,
+        pagos: {
+          include: {
+            pago_estado: true,
+            pago_metodo: true,
+          },
+        },
+      },
+    });
+
+    if (!pedido) {
+      throw new NotFoundException('Pedido no encontrado');
+    }
+
+    return {
+      id: pedido.id,
+      codigo: pedido.codigo,
+      total_pedido: Number(pedido.total_pedido),
+      pedido_estado_id: pedido.pedido_estado_id,
+      fecha_registro: pedido.fecha_registro,
+      fecha_entrega: pedido.fecha_entrega,
+      detalles_pedido: pedido.detalles_pedido,
+      pedido_productos: pedido.pedido_productos.map((pp) => ({
+        id: pp.id,
+        cantidad: pp.cantidad,
+        precio_unitario: Number(pp.precio_unitario),
+        detalles_producto: pp.detalles_producto,
+        producto: pp.producto,
+      })),
+      area_venta: pedido.area_venta,
+      pedido_estado: pedido.pedido_estado,
+      pagos: pedido.pagos.map((pago) => ({
+        id: pago.id,
+        pago_estado: pago.pago_estado,
+        pago_metodo_id: pago.pago_metodo_id,
+        pago_metodo: pago.pago_metodo,
+      })),
+    };
   }
 }

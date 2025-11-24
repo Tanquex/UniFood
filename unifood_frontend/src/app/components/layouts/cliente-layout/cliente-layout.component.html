@@ -20,7 +20,9 @@
           title="Ver carrito"
         >
           <i class="fas fa-shopping-cart"></i>
-          <span class="badge-count" *ngIf="cantidadCarrito > 0">{{ cantidadCarrito }}</span>
+          <span class="badge-count" *ngIf="cantidadCarrito > 0">{{
+            cantidadCarrito
+          }}</span>
         </button>
 
         <!-- Botón seguimiento -->
@@ -43,11 +45,21 @@
             </button>
 
             <div class="dropdown-menu" [class.open]="menuAbierto">
-              <button (click)="irARecomendaciones()"><i class="fas fa-star"></i>&af; Inicio</button>
-              <button (click)="irAProductos()"><i class="fas fa-utensils"></i>&af; Menú de Productos</button>
-              <button (click)="irACarrito()"><i class="fas fa-shopping-cart"></i>&af; Mi Carrito</button>
-              <button (click)="irAPedidos()"><i class="fas fa-receipt"></i>&af; Mis Pedidos</button>
-              <button (click)="logout()"><i class="fas fa-sign-out-alt"></i>&af; Cerrar sesión</button>
+              <button (click)="irARecomendaciones()">
+                <i class="fas fa-star"></i>&af; Inicio
+              </button>
+              <button (click)="irAProductos()">
+                <i class="fas fa-utensils"></i>&af; Menú de Productos
+              </button>
+              <button (click)="irACarrito()">
+                <i class="fas fa-shopping-cart"></i>&af; Mi Carrito
+              </button>
+              <button (click)="irAPedidos()">
+                <i class="fas fa-receipt"></i>&af; Mis Pedidos
+              </button>
+              <button (click)="logout()">
+                <i class="fas fa-sign-out-alt"></i>&af; Cerrar sesión
+              </button>
             </div>
           </div>
         </div>
@@ -113,31 +125,35 @@
 
             <!-- Estado texto -->
             <div class="estado-texto">
-            <!-- Info -->
-            <div class="pedido-info">
-              <strong>#{{ pedido.codigo }}</strong>
-              <p>
-                <strong>Área: </strong>
-                <span class="area">{{
-                  pedido.area_venta?.area_venta || "Área desconocida"
-                }}</span> 
+              <!-- Info -->
+              <div class="pedido-info">
+                <strong>#{{ pedido.codigo }}</strong>
                 <p>
-                <strong>Subtotal: </strong>
-                <span class="total">${{ pedido.total_pedido }}</span>
-              </p>
-              <p>
-                <strong> Pedido: </strong>
-                <span *ngIf="pedido.pedido_estado_id === 1">Pendiente</span>
-                <span *ngIf="pedido.pedido_estado_id === 2"
-                  >En preparación</span
-                >
-                <span *ngIf="pedido.pedido_estado_id === 3" class="listo-texto">
-                  ¡Listo en el area: {{ pedido.area_venta?.area_venta }}!
-                </span>
-              </p>
-            </div>
+                  <strong>Área: </strong>
+                  <span class="area">{{
+                    pedido.area_venta?.area_venta || "Área desconocida"
+                  }}</span>
+                </p>
 
-            
+                <p>
+                  <strong>Subtotal: </strong>
+                  <span class="total">${{ pedido.total_pedido }}</span>
+                </p>
+                <p>
+                  <strong> Pedido: </strong>
+                  <span *ngIf="pedido.pedido_estado_id === 1">Pendiente</span>
+                  <span *ngIf="pedido.pedido_estado_id === 2"
+                    >En preparación</span
+                  >
+                  <span
+                    *ngIf="pedido.pedido_estado_id === 3"
+                    class="listo-texto"
+                  >
+                    ¡Listo en el area: {{ pedido.area_venta?.area_venta }}!
+                  </span>
+                </p>
+              </div>
+
               <!-- Botón ver -->
               <button class="btn btn-ver">
                 <i class="fas fa-eye"></i>
@@ -295,15 +311,16 @@
           >
             <span class="cantidad">{{ item.cantidad }}x</span>
             <span class="nombre">{{ item.producto?.nombre }}</span>
-            <span class = "nombre"> {{item.detalles_producto}} </span>
+            <span class="nombre"> {{ item.detalles_producto }} </span>
             <span class="precio"
               >${{ item.precio_unitario * item.cantidad }}</span
             >
           </div>
-          <div *ngIf ="pedidoSeleccionado?.detalles_pedido"></div>
-          <i  class="fas fa-receipt"></i><strong> Detalles adicionales:</strong>
-          <span *ngIf ="pedidoSeleccionado?.detalles_pedido">
-            {{ pedidoSeleccionado?.detalles_pedido}}</span>
+          <div *ngIf="pedidoSeleccionado?.detalles_pedido"></div>
+          <i class="fas fa-receipt"></i><strong> Detalles adicionales:</strong>
+          <span *ngIf="pedidoSeleccionado?.detalles_pedido">
+            {{ pedidoSeleccionado?.detalles_pedido }}</span
+          >
         </div>
       </div>
 
@@ -326,6 +343,15 @@
         >
           <i class="fas fa-credit-card"></i>
           Pagar con tarjeta
+        </button>
+        <!-- Agregar botón junto a cada pedido -->
+        <button
+          *ngIf="pedidoSeleccionado"
+          class="btn btn-primary"
+          (click)="mostrarQR(pedidoSeleccionado)"
+          title="Ver código QR"
+        >
+          <i class="fas fa-qrcode"></i> Ver Código QR
         </button>
         <button class="btn btn-primary" (click)="cerrarModalSeguimiento()">
           Cerrar
@@ -501,9 +527,17 @@
   </div>
 
   <!-- Modal de Carrito -->
-  <div class="modal-carrito-overlay" *ngIf="mostrarModalCarrito" (click)="cerrarModalCarrito()">
+  <div
+    class="modal-carrito-overlay"
+    *ngIf="mostrarModalCarrito"
+    (click)="cerrarModalCarrito()"
+  >
     <div class="modal-carrito-contenido" (click)="$event.stopPropagation()">
-      <button class="btn-cerrar-modal-carrito" (click)="cerrarModalCarrito()" title="Cerrar carrito">
+      <button
+        class="btn-cerrar-modal-carrito"
+        (click)="cerrarModalCarrito()"
+        title="Cerrar carrito"
+      >
         <i class="fas fa-times"></i>
       </button>
       <app-cliente-pedido [ocultarRecomendaciones]="true"></app-cliente-pedido>

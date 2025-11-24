@@ -331,4 +331,16 @@ export class PedidoService {
       opciones
     );
   }
+
+  ///Obtener el pedido por ID para seguimiento público
+  obtenerPedidoPorIdPublico(id: number): Observable<Pedido> {
+    return this.http.get<Pedido>(`${this.apiUrl}/publico/${id}`).pipe(
+      map((pedido) => ({
+        ...pedido,
+        total_pedido: Number(pedido.total_pedido), // CONVERTIR A NÚMERO
+        pedido_productos: pedido.pedido_productos || [],
+        pagos: pedido.pagos || [],
+      }))
+    );
+  }
 }

@@ -21,15 +21,19 @@ export class PedidoGateway implements OnGatewayConnection, OnGatewayDisconnect {
   handleConnection(socket: Socket) {
     try {
       const token = socket.handshake.auth.token;
+      const isPublic = socket.handshake.query.public;
+
       if (!token) {
-        socket.disconnect(true);
+        if (isPublic === 'true') {
+          //console.log('⚠️ Conexión pública permitida');
+          return;
+        }
+        //console.log('⚠️ Conexión sin JWT rechazada');
+        socket.disconnect();
         return;
       }
 
       const payload = this.jwtService.verify(token);
-
-      // tu payload usa id_rol, no sub
-      const usuarioId = payload.id;
       const clienteId = payload.id_rol;
       const rol = payload.rol;
 
@@ -38,11 +42,11 @@ export class PedidoGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }
 
       if (rol === 'vendedor' && clienteId) {
-        // si un vendedor también tiene id_rol = id del área o del vendedor
         socket.join(`vendedor-area-${clienteId}`);
       }
     } catch (error) {
-      socket.disconnect(true);
+      //console.log(' Error al verificar JWT, conexión pública permitida');
+      socket.disconnect(); 
     }
   }
 
@@ -128,5 +132,13 @@ export class PedidoGateway implements OnGatewayConnection, OnGatewayDisconnect {
     },
   ) {
     this.server.to(`cliente-${clienteId}`).emit('validacion-progreso', data);
+  }
+
+  //Suscripcion para seguimiento publcio de pedidos
+  @SubscribeMessage('suscribirPedidoPublico')
+  handleSuscribirPedidoPublico(client: Socket, pedidoId: number) {
+    // Validar que el pedido existe (opcional)
+    client.join(`pedido-${pedidoId}`);
+    //console.log(`🔓 Cliente público se unió a pedido-${pedidoId}`);
   }
 }

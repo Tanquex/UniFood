@@ -1,0 +1,154 @@
+<audio #audioPendiente>
+  <source src="assets/sounds/notification.mp3" type="audio/mpeg" />
+</audio>
+
+<div class="seguimiento-container">
+  <!-- Loading -->
+  <div class="loading-container" *ngIf="cargando">
+    <div class="spinner"></div>
+    <p>Cargando información del pedido...</p>
+  </div>
+
+  <!-- Error -->
+  <div class="error-container" *ngIf="error && !cargando">
+    <i class="fas fa-exclamation-circle"></i>
+    <h2>{{ mensajeError }}</h2>
+    <p>Serás redirigido en breve...</p>
+  </div>
+
+  <!-- Contenido del pedido -->
+  <div class="pedido-content" *ngIf="!cargando && !error && pedido">
+    <!-- Header -->
+    <div class="pedido-header">
+      <h1><i class="fas fa-receipt"></i> Seguimiento de Pedido</h1>
+      <p class="pedido-numero">Pedido #{{ pedido.id }}</p>
+      <p class="pedido-numero">Codigo de Pedido #{{ pedido.codigo}}</p>
+    </div>
+
+    <!-- Estado actual -->
+    <div class="estado-section" [ngClass]="obtenerClaseEstado()">
+      <div class="estado-icono">
+        <i
+          class="fas fa-spinner fa-spin"
+          *ngIf="pedido.pedido_estado_id === 1"
+        ></i>
+        <i class="fas fa-fire" *ngIf="pedido.pedido_estado_id === 2"></i>
+        <i
+          class="fas fa-check-circle"
+          *ngIf="pedido.pedido_estado_id === 3"
+        ></i>
+        <i
+          class="fas fa-check-double"
+          *ngIf="pedido.pedido_estado_id === 4"
+        ></i>
+      </div>
+      <h3>
+        <span *ngIf="pedido.pedido_estado_id === 1">Pedido recibido</span>
+        <span *ngIf="pedido.pedido_estado_id === 2">Preparando tu pedido</span>
+        <span *ngIf="pedido.pedido_estado_id === 3">¡Listo para recoger!</span>
+        <span *ngIf="pedido.pedido_estado_id === 4">Entregado</span>
+      </h3>
+      <p class="area-info" *ngIf="pedido.area_venta">
+        📍 {{ pedido.area_venta.area_venta }}
+      </p>
+    </div>
+
+    <!-- Timeline -->
+    <div class="timeline">
+      <div
+        class="timeline-item"
+        [class.completed]="(pedido.pedido_estado_id ?? 0) >= 1"
+      >
+        <div class="timeline-marker"><i class="fas fa-check"></i></div>
+        <div class="timeline-content">
+          <strong>→ → Pedido recibido</strong>
+          <span>{{ pedido.fecha_registro | date : "dd/MM/yyyy HH:mm" }}</span>
+        </div>
+      </div>
+
+      <div
+        class="timeline-item"
+        [class.completed]="(pedido.pedido_estado_id ?? 0) >= 2"
+      >
+        <div class="timeline-marker"><i class="fas fa-check"></i></div>
+        <div class="timeline-content">
+          <strong>→ → En preparación</strong>
+          <span *ngIf="(pedido.pedido_estado_id ?? 0) >= 2">Preparando...</span>
+        </div>
+      </div>
+
+      <div
+        class="timeline-item"
+        [class.completed]="(pedido.pedido_estado_id ?? 0) >= 3"
+      >
+        <div class="timeline-marker"><i class="fas fa-check"></i></div>
+        <div class="timeline-content">
+          <strong>→ → Listo para recoger</strong>
+          <span *ngIf="(pedido.pedido_estado_id ?? 0) >= 3"
+            >¡Ya puedes recogerlo!</span
+          >
+        </div>
+      </div>
+
+      <div
+        class="timeline-item"
+        [class.completed]="(pedido.pedido_estado_id ?? 0) >= 4"
+      >
+        <div class="timeline-marker"><i class="fas fa-check"></i></div>
+        <div class="timeline-content">
+          <strong>→ → Entregado</strong>
+          <span *ngIf="(pedido.pedido_estado_id ?? 0) >= 4">
+            {{ pedido.fecha_entrega | date : "dd/MM/yyyy HH:mm" }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Productos del pedido -->
+    <div class="productos-section">
+      <h4><i class="fas fa-shopping-bag"></i> Tu pedido</h4>
+      <div class="productos-lista">
+        <div
+          class="producto-item"
+          *ngFor="let producto of pedido.pedido_productos"
+        >
+          <div class="producto-info">
+            <span class="producto-nombre">{{ producto.producto?.nombre }}</span>
+            <span class="producto-cantidad">x{{ producto.cantidad }}</span>
+          </div>
+          <span class="producto-precio"
+            >${{
+              producto.precio_unitario * producto.cantidad | number : "1.2-2"
+            }}</span
+          >
+        </div>
+      </div>
+      <div class="total-section">
+        <strong>Total:</strong>
+        <strong class="total-amount"
+          >${{ pedido.total_pedido | number : "1.2-2" }}</strong
+        >
+      </div>
+      <div class="pago-info">
+        <p>
+          <i class="fas fa-credit-card"></i>
+          Estado de pago:
+          <span
+            [ngClass]="'estado-pago-' + (pedido.pagos[0]?.pago_estado?.id || 1)"
+            *ngIf="pedido.pagos"
+          >
+            {{ pedido.pagos[0]?.pago_estado?.pago_estado || "Pendiente" }}
+          </span>
+        </p>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="pedido-footer">
+      <p class="info-text">
+        <i class="fas fa-info-circle"></i> Este es un seguimiento público.
+        Inicia sesión para más opciones.
+      </p>
+    </div>
+  </div>
+</div>

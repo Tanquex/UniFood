@@ -15,34 +15,43 @@ export class AppComponent implements OnInit {
   title = 'UniFood';
 
   ngOnInit(): void {
-  this.router.events.subscribe({
-    next: (event: any) => {
-      if (event.constructor.name !== 'NavigationEnd') return;
+    this.router.events.subscribe({
+      next: (event: any) => {
+        if (event.constructor.name !== 'NavigationEnd') return;
 
-      const usuario = this.authService.obtenerUsuario();
-      const autenticado = this.authService.estaAutenticado();
+        const usuario = this.authService.obtenerUsuario();
+        const autenticado = this.authService.estaAutenticado();
 
-      const rutasPublicas = ['/login', '/registro-cliente'];
+        const rutasPublicas = ['/login', '/registro-cliente'];
 
-      if (!autenticado && !rutasPublicas.includes(this.router.url)) {
-        this.router.navigate(['/login']);
-        return;
-      }
+        const esSeguimientoPublico =
+          this.router.url.startsWith('/seguimiento/');
 
-      if (autenticado && rutasPublicas.includes(this.router.url)) {
-        if (usuario?.rol === 'cliente') {
-          this.router.navigate(['/cliente']);
-        } else if (usuario?.rol === 'vendedor') {
-          this.router.navigate(['/vendedor']);
-        } else if (usuario?.rol === 'supervisor') {
-          this.router.navigate(['/supervisor']);
-        } else {
+        if (
+          !autenticado &&
+          !rutasPublicas.includes(this.router.url) &&
+          !esSeguimientoPublico
+        ) {
           this.router.navigate(['/login']);
+          return;
         }
-        return;
-      }
-    },
-  });
-}
 
+        if (
+          autenticado &&
+          (rutasPublicas.includes(this.router.url) || esSeguimientoPublico)
+        ) {
+          if (usuario?.rol === 'cliente') {
+            this.router.navigate(['/cliente']);
+          } else if (usuario?.rol === 'vendedor') {
+            this.router.navigate(['/vendedor']);
+          } else if (usuario?.rol === 'supervisor') {
+            this.router.navigate(['/supervisor']);
+          } else {
+            this.router.navigate(['/login']);
+          }
+          return;
+        }
+      },
+    });
+  }
 }
