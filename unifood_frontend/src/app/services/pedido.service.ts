@@ -175,8 +175,12 @@ export class PedidoService {
 
   // ===== MÉTODOS DE PEDIDOS CLIENTE =====
 
-  crearPedido(dto: CrearPedidoDto): Observable<Pedido> {
-    return this.http.post<Pedido>(this.apiUrl, dto);
+  crearPedido(dto: CrearPedidoDto): Observable<Pedido | any> {
+    return this.http.post<Pedido | any>(this.apiUrl, dto);
+  }
+
+  manejarDecisionAlergia(sessionId: string, decision: { accion: 'REMOVE' | 'ADD_DETAILS' | 'CONTINUE'; producto_id: number; detalles_especiales?: string }): Observable<Pedido | any> {
+    return this.http.post<Pedido | any>(`${this.apiUrl}/decision-alergia/${sessionId}`, decision);
   }
 
   procesarPago(pedidoId: number, dto: ProcesarPagoDto): Observable<any> {

@@ -28,6 +28,8 @@ import { PedidoContext } from 'src/pedido-chain-of-responsability/interfaces/ped
 export class PedidosService {
   private prisma = new PrismaClient();
   private readonly MAX_PEDIDOS_EN_PROCESO = 3;
+  // Almacenamiento temporal de contextos de validación en espera de decisión
+  private contextosPendientes: Map<string, PedidoContext> = new Map();
 
   constructor(
     private readonly pagosClient: PagosClient,
@@ -52,6 +54,50 @@ export class PedidosService {
 
     //Ejecutar las validaciones
     await chain.handle(context);
+
+    // Si la cadena se detuvo esperando decisión del usuario, retornar información
+    if (context.validacionEstado?.shouldStop && context.validacionEstado.waitingForDecision) {
+      const sessionId = `pedido_${Date.now()}_${clienteId}_${Math.random().toString(36).substr(2, 9)}`;
+      this.contextosPendientes.set(sessionId, context);
+      
+      // Limpiar contexto después de 10 minutos
+      setTimeout(() => {
+        this.contextosPendientes.delete(sessionId);
+      }, 10 * 60 * 1000);
+
+      // Type assertion explícito para ayudar a TypeScript
+      const decision = context.validacionEstado.waitingForDecision as {
+        productoId: number;
+        productoNombre: string;
+        alergiasEncontradas: string[];
+        ingredientesProblema: string[];
+        alternativa?: {
+          producto: any;
+          razon: string;
+        };
+      };
+
+      return {
+        waitingForDecision: true,
+        sessionId,
+        producto: {
+          id: decision.productoId,
+          nombre: decision.productoNombre,
+          alergiasEncontradas: decision.alergiasEncontradas,
+          ingredientesProblema: decision.ingredientesProblema,
+        },
+        alternativa: decision.alternativa ? {
+          producto: {
+            id: decision.alternativa.producto.id,
+            nombre: decision.alternativa.producto.nombre,
+            precio: Number(decision.alternativa.producto.precio),
+            descripcion: decision.alternativa.producto.descripcion,
+            imagen_url: decision.alternativa.producto.imagen_url,
+          },
+          razon: decision.alternativa.razon,
+        } : null,
+      };
+    }
 
     //Si llega aquí, todas las validaciones pasaron
     const total = dto.productos.reduce((sum, p) => sum + p.precio_unitario * p.cantidad, 0);
@@ -185,6 +231,246 @@ export class PedidosService {
       });
 
       // Notificar por WebSocket
+      this.pedidoGateway.notificarNuevoPedidoCliente(pedido);
+      this.pedidoGateway.notificarNuevoPedido(pedido);
+
+      return {
+        pedido,
+        advertencias: context.advertencias || [],
+      };
+    }
+  }
+
+  // Manejar decisión del usuario sobre producto con alergias
+  async manejarDecisionAlergia(
+    sessionId: string,
+    decisionDto: { accion: 'REMOVE' | 'ADD_DETAILS' | 'CONTINUE'; producto_id: number; detalles_especiales?: string },
+    clienteId: number
+  ) {
+    const context = this.contextosPendientes.get(sessionId);
+    
+    if (!context) {
+      throw new NotFoundException('Sesión de validación no encontrada o expirada');
+    }
+
+    if (context.clienteId !== clienteId) {
+      throw new UnauthorizedException('No tienes permiso para esta sesión');
+    }
+
+    const estado = context.validacionEstado;
+    if (!estado || !estado.waitingForDecision) {
+      throw new BadRequestException('No hay decisión pendiente para esta sesión');
+    }
+
+    if (estado.waitingForDecision.productoId !== decisionDto.producto_id) {
+      throw new BadRequestException('El producto no coincide con la decisión pendiente');
+    }
+
+    // Aplicar la decisión del usuario
+    switch (decisionDto.accion) {
+      case 'REMOVE':
+        // Eliminar el producto del DTO
+        context.dto.productos = context.dto.productos.filter(
+          p => p.producto_id !== decisionDto.producto_id
+        );
+        // No avanzar el índice (el siguiente producto tomará su lugar)
+        estado.shouldStop = false;
+        estado.waitingForDecision = undefined;
+        break;
+
+      case 'ADD_DETAILS':
+        // Agregar detalles especiales al producto
+        const productoIndex = context.dto.productos.findIndex(
+          p => p.producto_id === decisionDto.producto_id
+        );
+        if (productoIndex !== -1) {
+          const detallesActuales = context.dto.productos[productoIndex].detalles_producto || '';
+          context.dto.productos[productoIndex].detalles_producto = 
+            detallesActuales ? `${detallesActuales}, ${decisionDto.detalles_especiales}` : decisionDto.detalles_especiales;
+          
+          // Guardar modificaciones para revalidar
+          estado.modifiedProducts.set(decisionDto.producto_id, decisionDto.detalles_especiales || '');
+        }
+        // NO avanzar el índice - revalidar el mismo producto
+        estado.shouldStop = false;
+        estado.waitingForDecision = undefined;
+        break;
+
+      case 'CONTINUE':
+        // Marcar producto como ignorado y continuar
+        estado.ignoredProducts.add(decisionDto.producto_id);
+        estado.validatedProducts.add(decisionDto.producto_id);
+        estado.currentProductIndex++;
+        estado.shouldStop = false;
+        estado.waitingForDecision = undefined;
+        break;
+    }
+
+    // Continuar la validación desde donde se detuvo
+    const chain = PedidoChainFactory.create();
+    await chain.handle(context);
+
+    // Si se detuvo nuevamente, retornar nueva decisión pendiente
+    if (estado.shouldStop && estado.waitingForDecision) {
+      // Type assertion explícito para ayudar a TypeScript
+      const decision = estado.waitingForDecision as {
+        productoId: number;
+        productoNombre: string;
+        alergiasEncontradas: string[];
+        ingredientesProblema: string[];
+        alternativa?: {
+          producto: any;
+          razon: string;
+        };
+      };
+      return {
+        waitingForDecision: true,
+        sessionId, // Mantener el mismo sessionId
+        producto: {
+          id: decision.productoId,
+          nombre: decision.productoNombre,
+          alergiasEncontradas: decision.alergiasEncontradas,
+          ingredientesProblema: decision.ingredientesProblema,
+        },
+        alternativa: decision.alternativa ? {
+          producto: {
+            id: decision.alternativa.producto.id,
+            nombre: decision.alternativa.producto.nombre,
+            precio: Number(decision.alternativa.producto.precio),
+            descripcion: decision.alternativa.producto.descripcion,
+            imagen_url: decision.alternativa.producto.imagen_url,
+          },
+          razon: decision.alternativa.razon,
+        } : null,
+      };
+    }
+
+    // Si llegamos aquí, todas las validaciones pasaron
+    // Limpiar el contexto pendiente
+    this.contextosPendientes.delete(sessionId);
+
+    // Crear el pedido
+    const total = context.dto.productos.reduce((sum, p) => sum + p.precio_unitario * p.cantidad, 0);
+    const codigo = `PED-${Date.now()}-${clienteId}`;
+    const pagoMetodoId = context.dto.metodo_pago === 'tarjeta' ? 1 : 2;
+
+    if (context.dto.metodo_pago === 'tarjeta') {
+      if (!context.dto.datos_tarjeta) {
+        throw new BadRequestException('Datos de tarjeta requeridos');
+      }
+
+      try {
+        const resultadoPago = await this.pagosClient.procesarPago({
+          pedidoId: 0,
+          monto: total,
+          tarjeta: context.dto.datos_tarjeta,
+        });
+
+        if (!resultadoPago.success) {
+          throw new BadRequestException(resultadoPago.mensaje || 'Error al procesar el pago');
+        }
+
+        const pedido = await this.prisma.pedido.create({
+          data: {
+            codigo,
+            cliente_id: clienteId,
+            area_venta_id: context.dto.area_venta_id,
+            total_pedido: new Prisma.Decimal(total),
+            detalles_pedido: context.dto.detalles_pedido || null,
+            pedido_estado_id: 1,
+            pedido_productos: {
+              create: context.dto.productos.map((p) => ({
+                producto_id: p.producto_id,
+                cantidad: p.cantidad,
+                precio_unitario: new Prisma.Decimal(p.precio_unitario),
+                detalles_producto: p.detalles_producto || null,
+              })),
+            },
+          },
+          include: {
+            cliente: true,
+            pedido_productos: { include: { producto: true } },
+            area_venta: true,
+            pagos: {
+              include: {
+                pago_metodo: true,
+                pago_estado: true,
+              },
+            },
+          },
+        });
+
+        await this.prisma.pago.update({
+          where: { id: resultadoPago.pagoId },
+          data: { pedido_id: pedido.id },
+        });
+
+        const pedidoCompleto = await this.prisma.pedido.findUnique({
+          where: { id: pedido.id },
+          include: {
+            cliente: true,
+            pedido_productos: { include: { producto: true } },
+            area_venta: true,
+            pagos: {
+              include: {
+                pago_metodo: true,
+                pago_estado: true,
+              },
+            },
+          },
+        });
+
+        this.pedidoGateway.notificarNuevoPedidoCliente(pedidoCompleto);
+        this.pedidoGateway.notificarNuevoPedido(pedidoCompleto);
+
+        return {
+          pedido: pedidoCompleto,
+          advertencias: context.advertencias || [],
+        };
+      } catch (error) {
+        console.error('Error al crear pedido con tarjeta:', error);
+        throw new BadRequestException(error.message || 'Error al procesar el pedido con tarjeta');
+      }
+    } else {
+      // Pago en efectivo
+      const pedido = await this.prisma.pedido.create({
+        data: {
+          codigo,
+          cliente_id: clienteId,
+          area_venta_id: context.dto.area_venta_id,
+          total_pedido: new Prisma.Decimal(total),
+          detalles_pedido: context.dto.detalles_pedido || null,
+          pedido_estado_id: 1,
+          pedido_productos: {
+            create: context.dto.productos.map((p) => ({
+              producto_id: p.producto_id,
+              cantidad: p.cantidad,
+              precio_unitario: new Prisma.Decimal(p.precio_unitario),
+              detalles_producto: p.detalles_producto || null,
+            })),
+          },
+          pagos: {
+            create: {
+              cantidad: new Prisma.Decimal(total),
+              pago_metodo_id: pagoMetodoId,
+              pago_estado_id: 2,
+              fecha: new Date(),
+            },
+          },
+        },
+        include: {
+          cliente: true,
+          pedido_productos: { include: { producto: true } },
+          area_venta: true,
+          pagos: {
+            include: {
+              pago_metodo: true,
+              pago_estado: true,
+            },
+          },
+        },
+      });
+
       this.pedidoGateway.notificarNuevoPedidoCliente(pedido);
       this.pedidoGateway.notificarNuevoPedido(pedido);
 

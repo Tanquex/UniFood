@@ -17,11 +17,21 @@ export abstract class PedidoHandler {
 
   async handle(context: PedidoContext): Promise<void> {
     try {
+      // Si la cadena debe detenerse (esperando decisión del usuario), no continuar
+      if (context.validacionEstado?.shouldStop) {
+        return;
+      }
+
       this.emitProgress(context, 'processing');
 
       await this.delay(500);
 
       await this.process(context);
+
+      // Verificar nuevamente si debemos detener después del procesamiento
+      if (context.validacionEstado?.shouldStop) {
+        return;
+      }
 
       this.emitProgress(context, 'success');
       await this.delay(800);

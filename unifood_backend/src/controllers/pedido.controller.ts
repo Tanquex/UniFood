@@ -22,6 +22,7 @@ import {
   CalificarProductoDto,
   ProcesarPagoTarjetaDto,
   AgregarCarritoDto,
+  DecisionAlergiaDto,
   //OpcionesTicketDto,
   FiltrosReporteDto,
   OpcionesReporteDto,
@@ -97,6 +98,26 @@ export class PedidosController {
     }
 
     return this.pedidosService.crear(dto, usuario.id_rol);
+  }
+
+  @Post('decision-alergia/:sessionId')
+  @HttpCode(HttpStatus.OK)
+  async manejarDecisionAlergia(
+    @Param('sessionId') sessionId: string,
+    @Body() decisionDto: DecisionAlergiaDto,
+    @Request() req
+  ) {
+    const usuario = this.verificarAuth(req.headers.authorization);
+
+    if (usuario.rol !== 'cliente') {
+      throw new UnauthorizedException('Solo los clientes pueden tomar decisiones sobre alergias');
+    }
+
+    if (!usuario.id_rol) {
+      throw new UnauthorizedException('Cliente no encontrado para este usuario');
+    }
+
+    return this.pedidosService.manejarDecisionAlergia(sessionId, decisionDto, usuario.id_rol);
   }
 
  

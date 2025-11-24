@@ -178,3 +178,18 @@ export interface CatalogoAreaVenta {
   id: number;
   area_venta: string;
 }
+
+// DTO para decisión del usuario sobre producto con alergias
+export class DecisionAlergiaDto {
+  @IsEnum(['REMOVE', 'ADD_DETAILS', 'CONTINUE'])
+  @IsNotEmpty()
+  accion: 'REMOVE' | 'ADD_DETAILS' | 'CONTINUE';
+
+  @IsNumber()
+  @IsNotEmpty()
+  producto_id: number;
+
+  @IsString()
+  @IsOptional()
+  detalles_especiales?: string; // Solo para ADD_DETAILS (ej: "sin nuez")
+}

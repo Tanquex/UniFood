@@ -107,6 +107,36 @@ export class GeminiService {
     }
 
     const sanitizedMessage = this.sanitizeMessage(message.mensaje);
+    
+    // Validar que el mensaje sea apropiado
+    const validation = this.validateMessage(sanitizedMessage);
+    if (!validation.valid) {
+      return {
+        respuesta: validation.reason || 'Por favor, escribe un mensaje apropiado.',
+        sessionId: this.normalizeSessionId(message.sessionId),
+        timestamp: Date.now(),
+        recomendaciones: [],
+        metadata: {
+          isFallback: true,
+          validationError: true,
+        },
+      };
+    }
+
+    // Verificar si el mensaje es relevante para la cafetería
+    if (!this.isRelevantToCafeteria(sanitizedMessage)) {
+      return {
+        respuesta: 'Lo siento, solo puedo ayudarte con preguntas relacionadas con nuestro menú, productos, pedidos y recomendaciones de comida. ¿En qué puedo ayudarte con nuestro menú?',
+        sessionId: this.normalizeSessionId(message.sessionId),
+        timestamp: Date.now(),
+        recomendaciones: [],
+        metadata: {
+          isFallback: true,
+          offTopic: true,
+        },
+      };
+    }
+
     const sessionId = this.normalizeSessionId(message.sessionId);
 
     const [userContext, products, cachedConversation] = await Promise.all([
@@ -211,6 +241,112 @@ export class GeminiService {
     return input.replace(/\s+/g, ' ').trim();
   }
 
+  /**
+   * Valida si el mensaje es apropiado y relevante para el chat de la cafetería
+   */
+  private validateMessage(message: string): { valid: boolean; reason?: string } {
+    const lowerMessage = message.toLowerCase().trim();
+    
+    // Lista de palabras groseras/inapropiadas (en español)
+    const inappropriateWords = [
+      'puto', 'puta', 'joder', 'jodido', 'jodida', 'jodete', 'jodete',
+      'chingar', 'chingado', 'chingada', 'chinga', 'chinguen',
+      'pinche', 'pinches', 'pendejo', 'pendeja', 'pendejos', 'pendejas',
+      'cabron', 'cabrón', 'cabrones', 'culero', 'culera', 'culeros', 'culeras',
+      'mamada', 'mamadas', 'mamón', 'mamona', 'mamones', 'mamonas',
+      'verga', 'vergas', 'vrg', 'vrga',
+      'hijo de puta', 'hija de puta', 'hijos de puta', 'hijas de puta',
+      'me vale', 'me vale madre', 'me vale verga',
+      'chinga tu madre', 'chinga tu pinche madre',
+    ];
+
+    // Verificar palabras inapropiadas
+    for (const word of inappropriateWords) {
+      if (lowerMessage.includes(word)) {
+        return {
+          valid: false,
+          reason: 'Lenguaje inapropiado detectado. Por favor, mantén un lenguaje respetuoso.',
+        };
+      }
+    }
+
+    // Verificar si el mensaje es muy corto o solo caracteres especiales
+    const cleanMessage = message.replace(/[^\w\s]/g, '').trim();
+    if (cleanMessage.length < 2) {
+      return {
+        valid: false,
+        reason: 'Por favor, escribe un mensaje más completo.',
+      };
+    }
+
+    // Verificar si el mensaje es solo repetición de caracteres
+    if (/^(.)\1{10,}$/.test(cleanMessage)) {
+      return {
+        valid: false,
+        reason: 'Por favor, escribe un mensaje con sentido.',
+      };
+    }
+
+    return { valid: true };
+  }
+
+  /**
+   * Detecta si el mensaje es relevante para la cafetería/restaurante
+   */
+  private isRelevantToCafeteria(message: string): boolean {
+    const lowerMessage = message.toLowerCase().trim();
+    
+    // Palabras clave relacionadas con comida, menú, pedidos, etc.
+    const relevantKeywords = [
+      // Comida y bebida
+      'comida', 'bebida', 'alimento', 'platillo', 'plato', 'producto', 'productos',
+      'menú', 'menu', 'carta', 'catalogo', 'catálogo',
+      'postre', 'postres', 'torta', 'tortas', 'antojito', 'antojitos',
+      'bebida fría', 'bebida caliente', 'bebidas frías', 'bebidas calientes',
+      'café', 'cafe', 'té', 'te', 'refresco', 'agua', 'jugo',
+      // Acciones relacionadas
+      'recomienda', 'recomendación', 'recomendacion', 'recomiéndame', 'recomiendame',
+      'sugiere', 'sugerencia', 'quiero', 'dame', 'traeme', 'traeme',
+      'pedido', 'pedidos', 'orden', 'ordenar', 'comprar', 'comprar',
+      'precio', 'precios', 'cuanto cuesta', 'cuánto cuesta', 'cuesta',
+      'ingrediente', 'ingredientes', 'contiene', 'tiene',
+      'calorías', 'calorias', 'caloría', 'caloria',
+      'alergia', 'alergias', 'alérgico', 'alergico', 'intolerante',
+      'sin gluten', 'sin lactosa', 'sin nueces', 'vegetariano', 'vegano',
+      // Preguntas comunes
+      'qué hay', 'que hay', 'qué tienen', 'que tienen', 'qué venden', 'que venden',
+      'qué recomiendas', 'que recomiendas', 'qué sugieres', 'que sugieres',
+      'cuéntame', 'cuentame', 'dime', 'háblame', 'hablame',
+      'información', 'informacion', 'detalles', 'más info', 'mas info',
+      // Características
+      'dulce', 'salado', 'picante', 'caliente', 'frío', 'frio',
+      'saludable', 'ligero', 'ligera', 'sustancioso', 'sustanciosa',
+      'sacie', 'hambre', 'sed', 'antojito', 'antojo',
+      // Saludos y cortesía (permitidos)
+      'hola', 'buenos días', 'buenos dias', 'buenas tardes', 'buenas noches',
+      'gracias', 'por favor', 'porfavor', 'disculpa', 'perdón', 'perdon',
+      'adiós', 'adios', 'hasta luego', 'nos vemos',
+    ];
+
+    // Si el mensaje contiene alguna palabra clave relevante, es válido
+    if (relevantKeywords.some(keyword => lowerMessage.includes(keyword))) {
+      return true;
+    }
+
+    // Si el mensaje es muy corto (saludo simple), permitirlo
+    if (lowerMessage.length <= 20 && /^(hola|hi|hey|buenos|buenas|gracias|ok|okay)$/i.test(lowerMessage)) {
+      return true;
+    }
+
+    // Si no tiene palabras relevantes y es largo, probablemente no es relevante
+    if (lowerMessage.length > 30) {
+      return false;
+    }
+
+    // Por defecto, permitir mensajes cortos (podrían ser saludos o preguntas simples)
+    return true;
+  }
+
   private normalizeSessionId(sessionId?: string): string {
     const safeId = sessionId?.trim();
     if (safeId && safeId.length >= 6) {
@@ -225,13 +361,37 @@ export class GeminiService {
       'Debes analizar historial de pedidos, preferencias y disponibilidad actual.',
       'Responde siempre en JSON valido con la estructura solicitada.',
       'Evita recomendaciones que no existan en el catalogo proporcionado.',
+      '',
+      'REGLAS IMPORTANTES:',
+      '1. SOLO responde preguntas relacionadas con:',
+      '   - Menú, productos, comida y bebidas disponibles',
+      '   - Recomendaciones de productos',
+      '   - Información sobre ingredientes, precios, calorías',
+      '   - Alergias e intolerancias alimentarias',
+      '   - Pedidos y compras',
+      '   - Características de productos (dulce, salado, saludable, etc.)',
+      '',
+      '2. Si el usuario pregunta algo que NO está relacionado con comida, menú o pedidos:',
+      '   - Responde amablemente: "Lo siento, solo puedo ayudarte con preguntas sobre nuestro menú y productos. ¿En qué puedo ayudarte con la comida?"',
+      '   - NO respondas preguntas sobre: política, deportes, tecnología, chistes, conversación casual fuera de tema, etc.',
+      '   - NO uses lenguaje grosero, ofensivo o inapropiado.',
+      '',
+      '3. Si el usuario usa lenguaje inapropiado o grosero:',
+      '   - Responde educadamente: "Por favor, mantén un lenguaje respetuoso. ¿En qué puedo ayudarte con nuestro menú?"',
+      '   - NO repitas ni uses el lenguaje inapropiado.',
+      '',
+      '4. Si el mensaje no tiene sentido o es muy confuso:',
+      '   - Responde: "No entendí bien tu pregunta. ¿Podrías reformularla? Estoy aquí para ayudarte con nuestro menú y productos."',
+      '',
       'SISTEMA DE MENÚ INTERACTIVO:',
       '- Si el usuario pregunta "¿Qué hay en el menú?" o similar, muestra opciones numeradas:',
       '  1. Postres, 2. Tortas, 3. Antojitos, 4. Bebidas Frías, 5. Bebidas Calientes, 6. Menú completo, 7. Más populares, 8. Mejor calificados',
       '- Si el usuario responde con un número (1-8), filtra productos según la opción elegida.',
       '- Si el usuario pregunta sobre un producto específico, da detalles SOLO de ese producto sin mostrar recomendaciones adicionales.',
       '- Personaliza tus respuestas según el historial y preferencias del usuario.',
-    ].join(' ');
+      '',
+      'MANTÉN SIEMPRE EL FOCO: Tu único propósito es ayudar con el menú y productos de UniFood.',
+    ].join('\n');
   }
 
   private async buildPrompt(
@@ -242,12 +402,18 @@ export class GeminiService {
   ): Promise<string> {
     const productLines = products
       .map(
-        (product) =>
-          `ID:${product.id}|Nombre:${product.nombre}|Precio:${Number(
+        (product) => {
+          const line = `ID:${product.id}|Nombre:${product.nombre}|Precio:${Number(
             product.precio,
           ).toFixed(2)}|Categoria:${
             product.categoria?.nombre ?? 'Sin categoria'
-          }`,
+          }`;
+          // Incluir calorías si están disponibles
+          if (product.calorias !== null && product.calorias !== undefined) {
+            return `${line}|Calorias:${product.calorias}`;
+          }
+          return line;
+        }
       )
       .join('\n');
 
@@ -262,15 +428,21 @@ export class GeminiService {
     const queryType = this.detectQueryType(message, products, cachedConversation);
     
     const instructions = [
+      this.buildSystemInstruction(),
+      '',
       'Contexto del usuario:',
       JSON.stringify(context),
       'Catalogo disponible (todas las categorías):',
       productLines,
       previousMessages ? `Conversacion reciente:\n${previousMessages}` : '',
-      'Instrucciones:',
+      '',
+      'Instrucciones específicas para este mensaje:',
       `- Mensaje del usuario: "${message}"`,
       '- Devuelve solo JSON valido sin texto adicional.',
       '- Campo respuesta debe ser texto amigable y conversacional.',
+      '- Si el mensaje no es relevante para comida/menú, redirige amablemente al tema del menú.',
+      '- Si detectas lenguaje inapropiado, responde educadamente sin repetir el lenguaje ofensivo.',
+      '- Si el mensaje no tiene sentido, pide aclaración de manera amigable.',
     ];
 
     switch (queryType.type) {
@@ -317,10 +489,53 @@ export class GeminiService {
         break;
 
       default: // general_query
+        // Detectar si el usuario pide algo específico
+        const lowerMessage = message.toLowerCase();
+        const wantsLowCalories = lowerMessage.includes('bajo en calorías') || 
+                                 lowerMessage.includes('bajo en calorias') ||
+                                 lowerMessage.includes('pocas calorías') ||
+                                 lowerMessage.includes('pocas calorias') ||
+                                 (lowerMessage.includes('calorías') && lowerMessage.includes('bajo')) ||
+                                 (lowerMessage.includes('calorias') && lowerMessage.includes('bajo'));
+        
+        const wantsFilling = lowerMessage.includes('sacie') || 
+                            lowerMessage.includes('hambre') ||
+                            lowerMessage.includes('sustancioso') ||
+                            lowerMessage.includes('sustanciosa') ||
+                            lowerMessage.includes('llene');
+        
         instructions.push(
           '- Campo recomendaciones es un arreglo de máximo tres opciones.',
           '- Usa los IDs de producto proporcionados; evita duplicados.',
           '- Personaliza según las preferencias del usuario.',
+        );
+        
+        if (wantsLowCalories) {
+          instructions.push(
+            '- IMPORTANTE: El usuario quiere productos BAJOS EN CALORÍAS.',
+            '- Considera "bajo en calorías" como productos con MENOS DE 200 calorías.',
+            '- Si un producto tiene más de 200 calorías, NO lo recomiendes a menos que sea la única opción disponible.',
+            '- Prioriza productos con las calorías MÁS BAJAS disponibles.',
+            '- Si hay productos sin información de calorías, puedes incluirlos pero menciona que no tienes esa información.',
+            '- En tu respuesta, menciona las calorías de cada producto recomendado.',
+          );
+        } else if (wantsFilling) {
+          instructions.push(
+            '- El usuario quiere algo que SACIÉ o LLENE el hambre.',
+            '- Prioriza productos más sustanciosos, con más calorías o que tradicionalmente son más llenadores.',
+            '- Productos como tortas, antojitos o postres más grandes son mejores opciones.',
+          );
+        } else {
+          instructions.push(
+            '- Si el usuario menciona "saludable", "ligero", "ligera", etc.,',
+            '  analiza los productos disponibles y recomienda aquellos que mejor se ajusten a esos criterios.',
+            '- Si un producto tiene información de calorías, úsala para hacer recomendaciones más precisas.',
+          );
+        }
+        
+        instructions.push(
+          '- Explica en la respuesta por qué esos productos cumplen con los criterios solicitados.',
+          '- Sé honesto: si no hay productos que cumplan perfectamente con los criterios, menciona las limitaciones.',
         );
     }
 
@@ -330,9 +545,16 @@ export class GeminiService {
   private detectQueryType(message: string, products: any[], conversation: any): { type: string; data?: any } {
     const lowerMessage = message.toLowerCase().trim();
     
-    // 1. Detectar solicitud de menú
-    const menuKeywords = ['menú', 'menu', 'qué hay', 'que hay', 'opciones', 'qué tienen', 'que tienen', 'qué venden', 'que venden'];
-    if (menuKeywords.some(keyword => lowerMessage.includes(keyword))) {
+    // 1. Detectar solicitud de menú (solo si es una pregunta simple sobre el menú, no una solicitud de recomendación)
+    const menuKeywords = ['qué hay', 'que hay', 'qué tienen', 'que tienen', 'qué venden', 'que venden', 'muéstrame el menú', 'muestrame el menu', 'ver el menú', 'ver el menu'];
+    const recommendationKeywords = ['recomienda', 'recomendación', 'recomendacion', 'recomiéndame', 'recomiendame', 'sugiere', 'sugerencia', 'bajo en', 'sin', 'que sea', 'que tenga', 'que contenga', 'calorías', 'calorias', 'sacie', 'hambre', 'saludable', 'ligero', 'ligera'];
+    
+    // Si el mensaje contiene palabras de recomendación, NO es una solicitud de menú simple
+    const hasRecommendationIntent = recommendationKeywords.some(keyword => lowerMessage.includes(keyword));
+    const hasSimpleMenuRequest = menuKeywords.some(keyword => lowerMessage.includes(keyword)) && !hasRecommendationIntent;
+    
+    // Solo clasificar como menu_request si es una pregunta simple sobre el menú sin intención de recomendación
+    if (hasSimpleMenuRequest || (lowerMessage.includes('menú') && !hasRecommendationIntent && lowerMessage.length < 30)) {
       return { type: 'menu_request' };
     }
 
@@ -1127,11 +1349,21 @@ export class GeminiService {
     }
 
     const message = String(error.message ?? '').toLowerCase();
+    const errorString = JSON.stringify(error).toLowerCase();
+    
     return (
       message.includes('429') ||
       message.includes('too many requests') ||
       message.includes('quota exceeded') ||
-      message.includes('rate limit')
+      message.includes('rate limit') ||
+      // Detectar API keys expiradas o inválidas
+      message.includes('api key expired') ||
+      message.includes('api key invalid') ||
+      message.includes('api_key_invalid') ||
+      errorString.includes('api_key_invalid') ||
+      errorString.includes('api key expired') ||
+      // Detectar errores 400 relacionados con API keys
+      (message.includes('400') && (message.includes('api key') || message.includes('api_key')))
     );
   }
 
