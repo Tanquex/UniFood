@@ -15,7 +15,8 @@ async function bootstrap() {
   app.enableCors({
     origin: [
       configService.get<string>('CORS_ORIGIN'),
-      'http://192.168.0.112:4200','0.0.0.0', 'http://localhost:4200'
+      'http://192.168.0.112:4200','http://192.168.137.84:4200','http://192.168.1.181:4200','0.0.0.0', 'http://localhost:4200'
+       //192.168.137.84
     ]
   });
 

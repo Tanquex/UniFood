@@ -59,11 +59,14 @@ export class PedidosService {
     if (context.validacionEstado?.shouldStop && context.validacionEstado.waitingForDecision) {
       const sessionId = `pedido_${Date.now()}_${clienteId}_${Math.random().toString(36).substr(2, 9)}`;
       this.contextosPendientes.set(sessionId, context);
-      
+
       // Limpiar contexto después de 10 minutos
-      setTimeout(() => {
-        this.contextosPendientes.delete(sessionId);
-      }, 10 * 60 * 1000);
+      setTimeout(
+        () => {
+          this.contextosPendientes.delete(sessionId);
+        },
+        10 * 60 * 1000,
+      );
 
       // Type assertion explícito para ayudar a TypeScript
       const decision = context.validacionEstado.waitingForDecision as {
@@ -86,16 +89,18 @@ export class PedidosService {
           alergiasEncontradas: decision.alergiasEncontradas,
           ingredientesProblema: decision.ingredientesProblema,
         },
-        alternativa: decision.alternativa ? {
-          producto: {
-            id: decision.alternativa.producto.id,
-            nombre: decision.alternativa.producto.nombre,
-            precio: Number(decision.alternativa.producto.precio),
-            descripcion: decision.alternativa.producto.descripcion,
-            imagen_url: decision.alternativa.producto.imagen_url,
-          },
-          razon: decision.alternativa.razon,
-        } : null,
+        alternativa: decision.alternativa
+          ? {
+              producto: {
+                id: decision.alternativa.producto.id,
+                nombre: decision.alternativa.producto.nombre,
+                precio: Number(decision.alternativa.producto.precio),
+                descripcion: decision.alternativa.producto.descripcion,
+                imagen_url: decision.alternativa.producto.imagen_url,
+              },
+              razon: decision.alternativa.razon,
+            }
+          : null,
       };
     }
 
@@ -244,11 +249,15 @@ export class PedidosService {
   // Manejar decisión del usuario sobre producto con alergias
   async manejarDecisionAlergia(
     sessionId: string,
-    decisionDto: { accion: 'REMOVE' | 'ADD_DETAILS' | 'CONTINUE'; producto_id: number; detalles_especiales?: string },
-    clienteId: number
+    decisionDto: {
+      accion: 'REMOVE' | 'ADD_DETAILS' | 'CONTINUE';
+      producto_id: number;
+      detalles_especiales?: string;
+    },
+    clienteId: number,
   ) {
     const context = this.contextosPendientes.get(sessionId);
-    
+
     if (!context) {
       throw new NotFoundException('Sesión de validación no encontrada o expirada');
     }
@@ -271,7 +280,7 @@ export class PedidosService {
       case 'REMOVE':
         // Eliminar el producto del DTO
         context.dto.productos = context.dto.productos.filter(
-          p => p.producto_id !== decisionDto.producto_id
+          (p) => p.producto_id !== decisionDto.producto_id,
         );
         // No avanzar el índice (el siguiente producto tomará su lugar)
         estado.shouldStop = false;
@@ -281,16 +290,25 @@ export class PedidosService {
       case 'ADD_DETAILS':
         // Agregar detalles especiales al producto
         const productoIndex = context.dto.productos.findIndex(
-          p => p.producto_id === decisionDto.producto_id
+          (p) => p.producto_id === decisionDto.producto_id,
         );
         if (productoIndex !== -1) {
           const detallesActuales = context.dto.productos[productoIndex].detalles_producto || '';
-          context.dto.productos[productoIndex].detalles_producto = 
-            detallesActuales ? `${detallesActuales}, ${decisionDto.detalles_especiales}` : decisionDto.detalles_especiales;
-          
+          context.dto.productos[productoIndex].detalles_producto = detallesActuales
+            ? `${detallesActuales}, ${decisionDto.detalles_especiales}`
+            : decisionDto.detalles_especiales;
+
           // Guardar modificaciones para revalidar
-          estado.modifiedProducts.set(decisionDto.producto_id, decisionDto.detalles_especiales || '');
+          estado.modifiedProducts.set(
+            decisionDto.producto_id,
+            decisionDto.detalles_especiales || '',
+          );
         }
+
+        estado.ignoredProducts.add(decisionDto.producto_id);
+        estado.validatedProducts.add(decisionDto.producto_id);
+        estado.currentProductIndex++; // Avanzar al siguiente producto
+        
         // NO avanzar el índice - revalidar el mismo producto
         estado.shouldStop = false;
         estado.waitingForDecision = undefined;
@@ -332,16 +350,18 @@ export class PedidosService {
           alergiasEncontradas: decision.alergiasEncontradas,
           ingredientesProblema: decision.ingredientesProblema,
         },
-        alternativa: decision.alternativa ? {
-          producto: {
-            id: decision.alternativa.producto.id,
-            nombre: decision.alternativa.producto.nombre,
-            precio: Number(decision.alternativa.producto.precio),
-            descripcion: decision.alternativa.producto.descripcion,
-            imagen_url: decision.alternativa.producto.imagen_url,
-          },
-          razon: decision.alternativa.razon,
-        } : null,
+        alternativa: decision.alternativa
+          ? {
+              producto: {
+                id: decision.alternativa.producto.id,
+                nombre: decision.alternativa.producto.nombre,
+                precio: Number(decision.alternativa.producto.precio),
+                descripcion: decision.alternativa.producto.descripcion,
+                imagen_url: decision.alternativa.producto.imagen_url,
+              },
+              razon: decision.alternativa.razon,
+            }
+          : null,
       };
     }
 

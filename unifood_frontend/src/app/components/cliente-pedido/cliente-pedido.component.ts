@@ -289,7 +289,7 @@ export class ClientePedidoComponent implements OnInit {
           setTimeout(() => {
             this.mostrarProgresoValidacion = false;
           }, 500);
-          
+
           // Mostrar modal con 3 opciones
           this.mostrarModalDecisionAlergia(
             response.sessionId,
@@ -325,23 +325,23 @@ export class ClientePedidoComponent implements OnInit {
       error: (err) => {
         this.procesando = false;
         console.error('❌ Error al crear pedido:', err);
-        
+
         // Ocultar el progreso de validación cuando hay un error
         setTimeout(() => {
           this.mostrarProgresoValidacion = false;
         }, 500);
-        
+
         // Si es error de alergias (fallback para compatibilidad con versión anterior)
         if (err.error?.errorType === 'ALERGIAS_DETECTADAS') {
           const detalles = err.error?.details || {};
           const alergias = detalles.alergias || [];
           const productos = detalles.productosConAlergenos || [];
           const alternativas = detalles.alternativas || [];
-          
+
           // Limpiar advertencias del progreso para evitar duplicados
           this.advertenciasAlergias = [];
           this.alternativasProductos = [];
-          
+
           this.mostrarErrorConAlternativas(alergias, productos, alternativas);
         } else {
           Swal.fire({
@@ -362,7 +362,7 @@ export class ClientePedidoComponent implements OnInit {
   }
 
   private actualizarValidacion(data: any) {
-    data.status = (data.status || "").toLowerCase();
+    data.status = (data.status || '').toLowerCase();
 
     const index = this.validaciones.findIndex((v) => v.nombre === data.handler);
     if (index !== -1) {
@@ -370,7 +370,11 @@ export class ClientePedidoComponent implements OnInit {
       this.validaciones[index].message = data.message;
 
       // Si es una advertencia de alergias, guardar el mensaje y alternativas
-      if (data.status === 'warning' && data.handler === 'Alergias.' && data.message) {
+      if (
+        data.status === 'warning' &&
+        data.handler === 'Alergias.' &&
+        data.message
+      ) {
         if (!this.advertenciasAlergias.includes(data.message)) {
           this.advertenciasAlergias.push(data.message);
         }
@@ -378,7 +382,8 @@ export class ClientePedidoComponent implements OnInit {
         // Guardar alternativas si vienen en el mensaje
         if (data.alternativa) {
           const existe = this.alternativasProductos.find(
-            alt => alt.productoOriginalId === data.alternativa.productoOriginalId
+            (alt) =>
+              alt.productoOriginalId === data.alternativa.productoOriginalId
           );
           if (!existe) {
             this.alternativasProductos.push({
@@ -389,12 +394,20 @@ export class ClientePedidoComponent implements OnInit {
             });
           }
         }
-      } else if (data.status === 'warning' && data.message && data.handler !== 'Alergias.') {
+      } else if (
+        data.status === 'warning' &&
+        data.message &&
+        data.handler !== 'Alergias.'
+      ) {
         // Para otras advertencias que no sean de alergias, usar el método simple
         this.mostrarAdvertencia(data.message);
       }
 
-      if (data.status === 'processing' || data.status === 'error' || data.status === 'warning') {
+      if (
+        data.status === 'processing' ||
+        data.status === 'error' ||
+        data.status === 'warning'
+      ) {
         this.validacionActual = this.validaciones[index];
       }
     }
@@ -481,7 +494,9 @@ export class ClientePedidoComponent implements OnInit {
             <i class="fas fa-exclamation-triangle"></i> Alergias detectadas:
           </p>
           <ul style="margin: 5px 0; padding-left: 20px; color: #7f1d1d;">
-            ${alergias.map((a: string) => `<li style="margin: 4px 0;">${a}</li>`).join('')}
+            ${alergias
+              .map((a: string) => `<li style="margin: 4px 0;">${a}</li>`)
+              .join('')}
           </ul>
         </div>
         <div style="margin: 15px 0; padding: 12px; background: #fff7ed; border-radius: 6px; border-left: 4px solid #f59e0b;">
@@ -489,7 +504,9 @@ export class ClientePedidoComponent implements OnInit {
             <i class="fas fa-shopping-bag"></i> Productos problemáticos:
           </p>
           <ul style="margin: 5px 0; padding-left: 20px; color: #78350f;">
-            ${productos.map((p: string) => `<li style="margin: 4px 0;">${p}</li>`).join('')}
+            ${productos
+              .map((p: string) => `<li style="margin: 4px 0;">${p}</li>`)
+              .join('')}
           </ul>
         </div>
       </div>
@@ -501,7 +518,9 @@ export class ClientePedidoComponent implements OnInit {
           <p style="margin-bottom: 12px; font-weight: 700; color: #1e40af; font-size: 16px; display: flex; align-items: center; gap: 8px;">
             <span style="font-size: 20px;">💡</span> Recomendaciones de IA - Productos alternativos seguros:
           </p>
-          ${alternativas.map((alt, index) => `
+          ${alternativas
+            .map(
+              (alt, index) => `
             <div style="margin: 12px 0; padding: 15px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: 1px solid #e5e7eb;">
               <div style="margin-bottom: 10px;">
                 <p style="margin: 0 0 6px 0; font-weight: 600; color: #374151;">
@@ -529,7 +548,9 @@ export class ClientePedidoComponent implements OnInit {
                 <i class="fas fa-exchange-alt"></i> Reemplazar por este producto
               </button>
             </div>
-          `).join('')}
+          `
+            )
+            .join('')}
         </div>
       `;
     } else {
@@ -557,27 +578,37 @@ export class ClientePedidoComponent implements OnInit {
       html: htmlContent,
       width: '750px',
       showCancelButton: true,
-      confirmButtonText: alternativas && alternativas.length > 0 ? '<i class="fas fa-utensils"></i> Explorar más del menú' : 'Entendido',
+      confirmButtonText:
+        alternativas && alternativas.length > 0
+          ? '<i class="fas fa-utensils"></i> Explorar más del menú'
+          : 'Entendido',
       cancelButtonText: 'Cerrar',
       confirmButtonColor: '#5B9A97',
       cancelButtonColor: '#6b7280',
       reverseButtons: true,
       didOpen: () => {
         // Agregar evento al botón de confirmación para navegar al menú
-        const confirmButton = document.querySelector('.swal2-confirm') as HTMLElement;
+        const confirmButton = document.querySelector(
+          '.swal2-confirm'
+        ) as HTMLElement;
         if (confirmButton && alternativas && alternativas.length > 0) {
           confirmButton.addEventListener('click', (e) => {
             e.preventDefault();
             (window as any).navegarAMenu();
           });
         }
-      }
+      },
     });
   }
 
   mostrarModalDecisionAlergia(
     sessionId: string,
-    producto: { id: number; nombre: string; alergiasEncontradas: string[]; ingredientesProblema: string[] },
+    producto: {
+      id: number;
+      nombre: string;
+      alergiasEncontradas: string[];
+      ingredientesProblema: string[];
+    },
     alternativa?: { producto: any; razon: string } | null
   ): void {
     let htmlContent = `
@@ -593,13 +624,17 @@ export class ClientePedidoComponent implements OnInit {
             Alergias detectadas:
           </p>
           <ul style="margin: 5px 0; padding-left: 20px; color: #7f1d1d;">
-            ${producto.alergiasEncontradas.map((a: string) => `<li style="margin: 4px 0;">${a}</li>`).join('')}
+            ${producto.alergiasEncontradas
+              .map((a: string) => `<li style="margin: 4px 0;">${a}</li>`)
+              .join('')}
           </ul>
           <p style="margin: 10px 0 5px 0; font-weight: 600; color: #7f1d1d;">
             Ingredientes problemáticos:
           </p>
           <ul style="margin: 5px 0; padding-left: 20px; color: #7f1d1d;">
-            ${producto.ingredientesProblema.map((i: string) => `<li style="margin: 4px 0;">${i}</li>`).join('')}
+            ${producto.ingredientesProblema
+              .map((i: string) => `<li style="margin: 4px 0;">${i}</li>`)
+              .join('')}
           </ul>
         </div>
       </div>
@@ -638,7 +673,9 @@ export class ClientePedidoComponent implements OnInit {
       width: '700px',
       showCancelButton: true,
       showDenyButton: true,
-      confirmButtonText: alternativa ? '<i class="fas fa-exchange-alt"></i> Reemplazar producto' : '<i class="fas fa-trash"></i> Retirar producto',
+      confirmButtonText: alternativa
+        ? '<i class="fas fa-exchange-alt"></i> Reemplazar producto'
+        : '<i class="fas fa-trash"></i> Retirar producto',
       denyButtonText: '<i class="fas fa-edit"></i> Agregar detalles',
       cancelButtonText: '<i class="fas fa-check"></i> Continuar de todos modos',
       confirmButtonColor: alternativa ? '#5B9A97' : '#dc2626',
@@ -649,16 +686,24 @@ export class ClientePedidoComponent implements OnInit {
       didOpen: () => {
         // Si hay alternativa, el botón de confirmación reemplaza el producto
         if (alternativa) {
-          const confirmButton = document.querySelector('.swal2-confirm') as HTMLElement;
+          const confirmButton = document.querySelector(
+            '.swal2-confirm'
+          ) as HTMLElement;
           if (confirmButton) {
             confirmButton.addEventListener('click', (e) => {
               e.preventDefault();
-              this.reemplazarProductoYContinuar(sessionId, producto.id, alternativa.producto);
+              this.reemplazarProductoYContinuar(
+                sessionId,
+                producto.id,
+                alternativa.producto
+              );
             });
           }
         } else {
           // Si no hay alternativa, el botón de confirmación retira el producto
-          const confirmButton = document.querySelector('.swal2-confirm') as HTMLElement;
+          const confirmButton = document.querySelector(
+            '.swal2-confirm'
+          ) as HTMLElement;
           if (confirmButton) {
             confirmButton.addEventListener('click', (e) => {
               e.preventDefault();
@@ -677,14 +722,16 @@ export class ClientePedidoComponent implements OnInit {
         }
 
         // Botón "Continuar de todos modos"
-        const cancelButton = document.querySelector('.swal2-cancel') as HTMLElement;
+        const cancelButton = document.querySelector(
+          '.swal2-cancel'
+        ) as HTMLElement;
         if (cancelButton) {
           cancelButton.addEventListener('click', (e) => {
             e.preventDefault();
             this.tomarDecisionAlergia(sessionId, 'CONTINUE', producto.id);
           });
         }
-      }
+      },
     });
   }
 
@@ -704,17 +751,26 @@ export class ClientePedidoComponent implements OnInit {
       confirmButtonColor: '#5B9A97',
       cancelButtonColor: '#6b7280',
       preConfirm: () => {
-        const input = document.getElementById('detalles-input') as HTMLInputElement;
+        const input = document.getElementById(
+          'detalles-input'
+        ) as HTMLInputElement;
         const detalles = input?.value?.trim();
         if (!detalles) {
-          Swal.showValidationMessage('Por favor, ingresa los detalles especiales');
+          Swal.showValidationMessage(
+            'Por favor, ingresa los detalles especiales'
+          );
           return false;
         }
         return detalles;
-      }
+      },
     }).then((result) => {
       if (result.isConfirmed && result.value) {
-        this.tomarDecisionAlergia(sessionId, 'ADD_DETAILS', productoId, result.value);
+        this.tomarDecisionAlergia(
+          sessionId,
+          'ADD_DETAILS',
+          productoId,
+          result.value
+        );
       }
     });
   }
@@ -725,6 +781,29 @@ export class ClientePedidoComponent implements OnInit {
     productoId: number,
     detallesEspeciales?: string
   ): void {
+    if (accion === 'REMOVE') {
+      this.eliminarProductoDelCarrito(productoId);
+
+      this.cargarCarrito();
+      if (!this.areaSeleccionada || this.areaSeleccionada.items.length === 0) {
+        Swal.fire({
+          icon: 'info',
+          title: 'Carrito vacío',
+          text: 'Has eliminado todos los productos del área seleccionada',
+          confirmButtonColor: '#5B9A97',
+        }).then(() => {
+          this.procesando = false;
+          this.mostrarProgresoValidacion = false;
+        });
+        return;
+      }
+    }
+
+    if (accion === 'ADD_DETAILS' && detallesEspeciales) {
+      this.actualizarDetallesProducto(productoId, detallesEspeciales);
+      this.cargarCarrito();
+    }
+
     this.procesando = true;
     this.mostrarProgresoValidacion = true;
     this.resetearValidaciones();
@@ -743,7 +822,7 @@ export class ClientePedidoComponent implements OnInit {
           setTimeout(() => {
             this.mostrarProgresoValidacion = false;
           }, 500);
-          
+
           this.mostrarModalDecisionAlergia(
             response.sessionId,
             response.producto,
@@ -781,7 +860,7 @@ export class ClientePedidoComponent implements OnInit {
         setTimeout(() => {
           this.mostrarProgresoValidacion = false;
         }, 500);
-        
+
         Swal.fire({
           icon: 'error',
           title: 'Error',
@@ -790,6 +869,42 @@ export class ClientePedidoComponent implements OnInit {
         });
       },
     });
+  }
+
+  private actualizarDetallesProducto(
+    productoId: number,
+    detalles: string
+  ): void {
+    if (!this.areaSeleccionada) return;
+
+    // Buscar el producto en el carrito
+    const item = this.areaSeleccionada.items.find(
+      (i) => i.producto.id === productoId
+    );
+
+    if (item) {
+      // Actualizar detalles en el item
+      item.detalles = detalles;
+    }
+  }
+
+  private eliminarProductoDelCarrito(productoId: number): void {
+    if (!this.areaSeleccionada) return;
+
+    // Buscar el producto en el carrito global
+    let todosLosItems: ItemCarrito[] = [];
+    this.pedidoService.itemsCarrito$
+      .subscribe((items) => (todosLosItems = items))
+      .unsubscribe();
+
+    const globalIndex = todosLosItems.findIndex(
+      (item) => item.producto.id === productoId
+    );
+
+    if (globalIndex !== -1) {
+      this.pedidoService.eliminarItem(globalIndex);
+      console.log(`✅ Producto ${productoId} eliminado del carrito`);
+    }
   }
 
   reemplazarProductoYContinuar(
@@ -804,6 +919,8 @@ export class ClientePedidoComponent implements OnInit {
       productoAlternativo.nombre,
       productoAlternativo.precio
     );
+
+    this.cargarCarrito();
 
     // Luego retirar el producto original de la validación
     setTimeout(() => {
@@ -821,7 +938,7 @@ export class ClientePedidoComponent implements OnInit {
 
     // Buscar el item en el carrito
     const itemIndex = this.areaSeleccionada.items.findIndex(
-      item => item.producto.id === productoOriginalId
+      (item) => item.producto.id === productoOriginalId
     );
 
     if (itemIndex === -1) {
@@ -838,9 +955,9 @@ export class ClientePedidoComponent implements OnInit {
     this.pedidoService.itemsCarrito$
       .subscribe((items) => (todosLosItems = items))
       .unsubscribe();
-    
+
     const globalIndex = todosLosItems.findIndex(
-      i => i.producto.id === productoOriginalId
+      (i) => i.producto.id === productoOriginalId
     );
 
     if (globalIndex !== -1) {
@@ -880,7 +997,7 @@ export class ClientePedidoComponent implements OnInit {
       confirmButtonText: 'Continuar',
       confirmButtonColor: '#5B9A97',
       timer: 3000,
-      timerProgressBar: true
+      timerProgressBar: true,
     });
   }
 }
