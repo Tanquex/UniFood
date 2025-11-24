@@ -21,25 +21,30 @@ export class AppComponent implements OnInit {
 
         const usuario = this.authService.obtenerUsuario();
         const autenticado = this.authService.estaAutenticado();
+        const url = this.router.url;
 
         const rutasPublicas = ['/login', '/registro-cliente'];
+        const esSeguimientoPublico = url.startsWith('/seguimiento/');
 
-        const esSeguimientoPublico =
-          this.router.url.startsWith('/seguimiento/');
-
-        if (
-          !autenticado &&
-          !rutasPublicas.includes(this.router.url) &&
-          !esSeguimientoPublico
-        ) {
-          this.router.navigate(['/login']);
+        // ===========================
+        //  USUARIO NO AUTENTICADO
+        // ===========================
+        if (!autenticado) {
+          if (!rutasPublicas.includes(url) && !esSeguimientoPublico) {
+            this.router.navigate(['/login']);
+          }
           return;
         }
 
-        if (
-          autenticado &&
-          (rutasPublicas.includes(this.router.url) || esSeguimientoPublico)
-        ) {
+        // ===========================
+        //  USUARIO AUTENTICADO
+        // ===========================
+
+        // Permitimos seguimiento aunque esté loggeado
+        if (esSeguimientoPublico) return;
+
+        // Si está autenticado y entra a login o registro → redirigir por rol
+        if (rutasPublicas.includes(url)) {
           if (usuario?.rol === 'cliente') {
             this.router.navigate(['/cliente']);
           } else if (usuario?.rol === 'vendedor') {
