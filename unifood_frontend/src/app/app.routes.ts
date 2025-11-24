@@ -23,6 +23,7 @@ import { ClienteProductosComponent } from './components/cliente-productos/client
 import { RecomendacionesHomeComponent } from './components/recomendaciones-home/recomendaciones-home.component';
 import { SupervisorRecomendacionesComponent } from './components/supervisor-recomendaciones/supervisor-recomendaciones.component';
 import { ClienteComponent } from './components/cliente/cliente.component';
+import { SeguimientoPedidoComponent } from './components/seguimiento-pedido/seguimiento-pedido.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'lista-vendedores', pathMatch: 'full' },
@@ -31,6 +32,7 @@ export const routes: Routes = [
   { path: 'borrar', component: BorrarComponent },
   { path: 'menu', component: MenuComponent },
   { path: 'crear-vendedor', component: CrearVendedorComponent },
+  {path: 'seguimiento/:id',component: SeguimientoPedidoComponent},
 
   // ========== CLIENTE ==========
   {

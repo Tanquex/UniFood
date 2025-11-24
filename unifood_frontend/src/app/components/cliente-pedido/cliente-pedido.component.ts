@@ -362,6 +362,8 @@ export class ClientePedidoComponent implements OnInit {
   }
 
   private actualizarValidacion(data: any) {
+    data.status = (data.status || "").toLowerCase();
+
     const index = this.validaciones.findIndex((v) => v.nombre === data.handler);
     if (index !== -1) {
       this.validaciones[index].status = data.status;
@@ -387,12 +389,28 @@ export class ClientePedidoComponent implements OnInit {
             });
           }
         }
+      } else if (data.status === 'warning' && data.message && data.handler !== 'Alergias.') {
+        // Para otras advertencias que no sean de alergias, usar el método simple
+        this.mostrarAdvertencia(data.message);
       }
 
       if (data.status === 'processing' || data.status === 'error' || data.status === 'warning') {
         this.validacionActual = this.validaciones[index];
       }
     }
+  }
+
+  private mostrarAdvertencia(mensaje: string) {
+    Swal.fire({
+      title: 'Advertencia!',
+      position: 'top-end',
+      text: mensaje,
+      icon: 'warning',
+      showConfirmButton: true,
+      confirmButtonText: 'Entendido',
+      confirmButtonColor: '#dcbb6cff',
+      toast: true,
+    });
   }
 
   private resetearValidaciones() {

@@ -15,34 +15,48 @@ export class AppComponent implements OnInit {
   title = 'UniFood';
 
   ngOnInit(): void {
-  this.router.events.subscribe({
-    next: (event: any) => {
-      if (event.constructor.name !== 'NavigationEnd') return;
+    this.router.events.subscribe({
+      next: (event: any) => {
+        if (event.constructor.name !== 'NavigationEnd') return;
 
-      const usuario = this.authService.obtenerUsuario();
-      const autenticado = this.authService.estaAutenticado();
+        const usuario = this.authService.obtenerUsuario();
+        const autenticado = this.authService.estaAutenticado();
+        const url = this.router.url;
 
-      const rutasPublicas = ['/login', '/registro-cliente'];
+        const rutasPublicas = ['/login', '/registro-cliente'];
+        const esSeguimientoPublico = url.startsWith('/seguimiento/');
 
-      if (!autenticado && !rutasPublicas.includes(this.router.url)) {
-        this.router.navigate(['/login']);
-        return;
-      }
-
-      if (autenticado && rutasPublicas.includes(this.router.url)) {
-        if (usuario?.rol === 'cliente') {
-          this.router.navigate(['/cliente']);
-        } else if (usuario?.rol === 'vendedor') {
-          this.router.navigate(['/vendedor']);
-        } else if (usuario?.rol === 'supervisor') {
-          this.router.navigate(['/supervisor']);
-        } else {
-          this.router.navigate(['/login']);
+        // ===========================
+        //  USUARIO NO AUTENTICADO
+        // ===========================
+        if (!autenticado) {
+          if (!rutasPublicas.includes(url) && !esSeguimientoPublico) {
+            this.router.navigate(['/login']);
+          }
+          return;
         }
-        return;
-      }
-    },
-  });
-}
 
+        // ===========================
+        //  USUARIO AUTENTICADO
+        // ===========================
+
+        // Permitimos seguimiento aunque esté loggeado
+        if (esSeguimientoPublico) return;
+
+        // Si está autenticado y entra a login o registro → redirigir por rol
+        if (rutasPublicas.includes(url)) {
+          if (usuario?.rol === 'cliente') {
+            this.router.navigate(['/cliente']);
+          } else if (usuario?.rol === 'vendedor') {
+            this.router.navigate(['/vendedor']);
+          } else if (usuario?.rol === 'supervisor') {
+            this.router.navigate(['/supervisor']);
+          } else {
+            this.router.navigate(['/login']);
+          }
+          return;
+        }
+      },
+    });
+  }
 }

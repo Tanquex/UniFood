@@ -1,0 +1,381 @@
+$primary: #5b9a97;
+$secondary: #f4d8a8;
+$background: #f9f4e8;
+$card-bg: #ffffff;
+$text-primary: #4a5859;
+$text-secondary: #7a8a8b;
+$success: #6bbf59;
+$warning: #f4a261;
+$danger: #e76f51;
+
+.seguimiento-container {
+  min-height: 100vh;
+  background: $background;
+  padding: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// ========== LOADING ==========
+.loading-container,
+.error-container {
+  text-align: center;
+  padding: 3rem;
+  background: $card-bg;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+
+  .spinner {
+    width: 60px;
+    height: 60px;
+    border: 4px solid rgba($primary, 0.2);
+    border-top-color: $primary;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+  }
+
+  i {
+    font-size: 4rem;
+    color: $danger;
+    margin-bottom: 1rem;
+  }
+
+  h2 {
+    color: $text-primary;
+    margin-bottom: 0.5rem;
+  }
+
+  p {
+    color: $text-secondary;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// ========== CONTENIDO DEL PEDIDO ==========
+.pedido-content {
+  background: $card-bg;
+  border-radius: 16px;
+  max-width: 600px;
+  width: 100%;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+}
+
+.pedido-header {
+  background: linear-gradient(135deg, $primary 0%, darken($primary, 10%) 100%);
+  color: white;
+  padding: 2rem;
+  text-align: center;
+
+  h1 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+
+  .pedido-numero {
+    margin: 0;
+    font-size: 1rem;
+    opacity: 0.9;
+  }
+}
+
+// ========== ESTADO ==========
+.estado-section {
+  text-align: center;
+  padding: 2rem;
+  border-bottom: 2px solid rgba($text-secondary, 0.1);
+
+  &.estado-1 {
+    background: linear-gradient(
+      135deg,
+      lighten($warning, 30%) 0%,
+      lighten($warning, 20%) 100%
+    );
+  }
+
+  &.estado-2 {
+    background: linear-gradient(
+      135deg,
+      lighten($primary, 30%) 0%,
+      lighten($primary, 20%) 100%
+    );
+  }
+
+  &.estado-3 {
+    background: linear-gradient(
+      135deg,
+      lighten($success, 30%) 0%,
+      lighten($success, 20%) 100%
+    );
+  }
+
+  &.estado-4 {
+    background: linear-gradient(
+      135deg,
+      lighten($secondary, 20%) 0%,
+      $secondary 100%
+    );
+  }
+
+  .estado-icono {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    color: $primary;
+  }
+
+  h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.8rem;
+    color: $text-primary;
+  }
+
+  .area-info {
+    margin: 0;
+    font-size: 1.1rem;
+    color: $text-primary;
+    font-weight: 600;
+  }
+}
+
+// ========== TIMELINE ==========
+.timeline {
+  position: relative;
+  padding: 2rem 2rem 2rem 3rem;
+
+  &::before {
+    content: "";
+    position: absolute;
+    left: 1.75rem;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: rgba($text-secondary, 0.2);
+  }
+}
+
+.timeline-item {
+  position: relative;
+  padding-bottom: 1.5rem;
+
+  &.completed {
+    .timeline-marker {
+      background: $success;
+      border-color: $success;
+
+      i {
+        color: white;
+      }
+    }
+
+    .timeline-content strong {
+      color: $text-primary;
+    }
+  }
+}
+
+.timeline-marker {
+  position: absolute;
+  left: -1.25rem;
+  top: 0;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: $card-bg;
+  border: 2px solid rgba($text-secondary, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+
+  i {
+    font-size: 0.8rem;
+    color: rgba($text-secondary, 0.5);
+  }
+}
+
+.timeline-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+
+  strong {
+    color: $text-secondary;
+    font-size: 0.95rem;
+  }
+
+  span {
+    color: $text-secondary;
+    font-size: 0.85rem;
+  }
+}
+
+// ========== PRODUCTOS ==========
+.productos-section {
+  padding: 2rem;
+  border-top: 2px solid rgba($text-secondary, 0.1);
+
+  h4 {
+    margin: 0 0 1rem 0;
+    color: $text-primary;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    i {
+      color: $primary;
+    }
+  }
+}
+
+.productos-lista {
+  margin-bottom: 1rem;
+}
+
+.producto-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid rgba($text-secondary, 0.1);
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  .producto-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+
+    .producto-nombre {
+      font-weight: 500;
+      color: $text-primary;
+    }
+
+    .producto-cantidad {
+      font-size: 0.85rem;
+      color: $text-secondary;
+    }
+  }
+
+  .producto-precio {
+    font-weight: 600;
+    color: $primary;
+    font-size: 1.1rem;
+  }
+}
+
+.total-section {
+  display: flex;
+  justify-content: space-between;
+  padding: 1rem 0 0;
+  border-top: 2px solid rgba($text-secondary, 0.2);
+  margin-top: 1rem;
+
+  strong {
+    font-size: 1.2rem;
+    color: $text-primary;
+  }
+
+  .total-amount {
+    color: $primary;
+  }
+}
+
+// ========== FOOTER ==========
+.pedido-footer {
+  padding: 1.5rem 2rem;
+  background: rgba($primary, 0.05);
+  text-align: center;
+
+  .info-text {
+    margin: 0;
+    color: $text-secondary;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+
+    i {
+      color: $primary;
+    }
+  }
+}
+
+// ========== RESPONSIVE ==========
+@media (max-width: 768px) {
+  .seguimiento-container {
+    padding: 1rem;
+  }
+
+  .pedido-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .estado-section {
+    padding: 1.5rem 1rem;
+
+    .estado-icono {
+      font-size: 3rem;
+    }
+
+    h3 {
+      font-size: 1.5rem;
+    }
+  }
+}
+
+// ✅ AGREGAR al final del archivo
+.pago-info {
+  padding: 1rem;
+  background: rgba($primary, 0.05);
+  border-radius: 8px;
+  margin-top: 1rem;
+  text-align: center;
+
+  p {
+    margin: 0;
+    color: $text-primary;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+
+    i {
+      color: $primary;
+    }
+
+    span {
+      font-weight: 600;
+      padding: 0.25rem 0.75rem;
+      border-radius: 12px;
+
+      &.estado-pago-1 {
+        background: lighten($warning, 30%);
+        color: darken($warning, 20%);
+      }
+
+      &.estado-pago-2 {
+        background: lighten($success, 30%);
+        color: darken($success, 20%);
+      }
+
+      &.estado-pago-3 {
+        background: lighten($danger, 30%);
+        color: darken($danger, 20%);
+      }
+    }
+  }
+}

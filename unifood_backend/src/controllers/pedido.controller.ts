@@ -120,8 +120,6 @@ export class PedidosController {
     return this.pedidosService.manejarDecisionAlergia(sessionId, decisionDto, usuario.id_rol);
   }
 
- 
-
   @Get('mis-pedidos-activos')
   async obtenerMisPedidosActivos(@Request() req) {
     const usuario = this.verificarAuth(req.headers.authorization);
@@ -358,7 +356,7 @@ export class PedidosController {
   // Generar reporte de pedidos
   @Post('reporte')
   async generarReportePedidos(
-    @Body() body: { filtros: FiltrosReporteDto; opciones: OpcionesReporteDto},
+    @Body() body: { filtros: FiltrosReporteDto; opciones: OpcionesReporteDto },
     @Request() req,
   ) {
     const usuario = this.verificarAuth(req.headers.authorization);
@@ -378,5 +376,11 @@ export class PedidosController {
   ) {
     this.verificarAuth(req.headers.authorization);
     return this.pedidosService.generarTicketPedido(Number(id), opciones);
+  }
+
+  // Obtener pedido para el seguimiento publico
+  @Get('publico/:id')
+  async obtenerPedidoPublico(@Param('id') id: string) {
+    return this.pedidosService.obtenerPedidoPorIdPublico(+id);
   }
 }
